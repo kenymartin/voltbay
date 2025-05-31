@@ -1,0 +1,404 @@
+# =======================
+# VoltBay Project .gitignore
+# =======================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+*.env
+
+# Build Output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Frontend (Vite/React)
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+frontend/.nyc_output/
+
+# Backend Build Output
+backend/auth/dist/
+backend/api/dist/
+backend/auth/build/
+backend/api/build/
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output/
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# =======================
+# Database & Prisma
+# =======================
+
+# Prisma
+backend/auth/prisma/migrations/
+backend/api/prisma/migrations/
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.sql
+*.dump
+
+# =======================
+# Docker
+# =======================
+
+# Docker volumes and data
+docker/data/
+postgres_data/
+redis_data/
+api_uploads/
+
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Docker build context
+.dockerignore
+
+# =======================
+# IDE & Editors
+# =======================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# WebStorm
+.idea/
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+tags
+[._]*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =======================
+# Operating System
+# =======================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =======================
+# Security & Certificates
+# =======================
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.pub
+
+# =======================
+# Uploads & Media
+# =======================
+
+# User uploads
+uploads/
+public/uploads/
+backend/api/uploads/
+static/uploads/
+
+# =======================
+# Testing
+# =======================
+
+# Test coverage
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+
+# Jest
+jest.config.js
+jest.config.ts
+
+# =======================
+# Package Managers
+# =======================
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# pnpm
+.pnpm-debug.log*
+.pnpm-store/
+
+# =======================
+# Cloud & Deployment
+# =======================
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify/
+
+# AWS
+.aws-sam/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# =======================
+# Monitoring & Analytics
+# =======================
+
+# Sentry
+.sentryclirc
+
+# =======================
+# Miscellaneous
+# =======================
+
+# Local development files
+.local
+.cache/
+.tmp/
+
+# Backup files
+*.bak
+*.backup
+*.swp
+*.swo
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Generated documentation
+docs/build/
+
+# Lock files (uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# =======================
+# Project-specific
+# =======================
+
+# VoltBay specific generated files
+shared/dist/
+shared/build/
+
+# Email templates cache
+email-templates-cache/
+
+# Generated API documentation
+api-docs/
+
+# Performance monitoring
+.clinic/
+
+# =======================
+# End of .gitignore
+# =======================
+

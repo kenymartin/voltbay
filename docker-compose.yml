@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: voltbay-postgres
+    environment:
+      POSTGRES_DB: voltbay
+      POSTGRES_USER: voltbay_user
+      POSTGRES_PASSWORD: voltbay_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - voltbay-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voltbay_user -d voltbay"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: voltbay-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - voltbay-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Authentication Service
+  auth:
+    build:
+      context: ./backend/auth
+      dockerfile: Dockerfile
+    container_name: voltbay-auth
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://voltbay_user:voltbay_password@postgres:5432/voltbay
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_USER: your-email@gmail.com
+      EMAIL_PASS: your-app-password
+    volumes:
+      - ./backend/auth:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - voltbay-network
+    command: npm run dev
+
+  # API Service
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    container_name: voltbay-api
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: development
+      PORT: 5001
+      DATABASE_URL: postgresql://voltbay_user:voltbay_password@postgres:5432/voltbay
+      REDIS_URL: redis://redis:6379
+      AUTH_SERVICE_URL: http://auth:4000
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./backend/api:/app
+      - /app/node_modules
+      - api_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_started
+    networks:
+      - voltbay-network
+    command: npm run dev
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: voltbay-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:5001
+      VITE_AUTH_URL: http://localhost:4000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - auth
+      - api
+    networks:
+      - voltbay-network
+    command: npm run dev
+
+networks:
+  voltbay-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads: 

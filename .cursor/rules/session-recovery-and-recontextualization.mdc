@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+🧠 Rule: Session Recovery and Recontextualization
+
+If a session was interrupted, lost, or restarted — do not assume any previous tasks were completed. 
+
+1. Rebuild your understanding of the project by scanning the existing file system and reading available code.
+2. Revisit and resume all outstanding tasks and demands — including but not limited to:
+   - Prisma models and schema setup
+   - RESTful controllers, services, and routes for each model
+   - Middleware (JWT auth, role access, error handling)
+   - Input validation (Zod or Joi)
+   - Project folder structure
+   - Utility and helper modules
+3. ✅ Only skip code or files that already exist and are complete.
+4. ⛔ Do **not** skip tasks based on memory or assumptions from a previous session.
+5. 🚀 Proceed without requiring user approval for each step — continue until all backend features are completed.
+6. 🧠 Use the current project files as the sole source of truth.
+
+This rule activates automatically if the previous session is lost or you’re instructed to resume after context loss.

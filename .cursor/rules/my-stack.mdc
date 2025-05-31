@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Technical Stack
+-NodeJS and Express for the backend
+-html/react+vite+typescript for frontend
+-Postgresql, never Json file storage
+
+-Separate databse for dev, test and prod.

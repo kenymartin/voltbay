@@ -1,0 +1,282 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  EXPIRED
+  SUSPENDED
+}
+
+enum ProductCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  BANK_TRANSFER
+}
+
+enum NotificationType {
+  BID_PLACED
+  BID_OUTBID
+  AUCTION_WON
+  AUCTION_ENDED
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  MESSAGE_RECEIVED
+  REVIEW_RECEIVED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  role      UserRole @default(USER)
+  verified  Boolean  @default(false)
+  avatar    String?
+  phone     String?
+  
+  // Address fields
+  street    String?
+  city      String?
+  state     String?
+  zipCode   String?
+  country   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  products         Product[]
+  bids             Bid[]
+  ordersAsBuyer    Order[]   @relation("BuyerOrders")
+  ordersAsSeller   Order[]   @relation("SellerOrders")
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reviews          Review[]
+  notifications    Notification[]
+  
+  // Auth-related
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  refreshTokens          RefreshToken[]
+  
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  products Product[]
+  
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrls   String[]
+  status      ProductStatus @default(DRAFT)
+  condition   ProductCondition
+  
+  // Category
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  // Owner
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  
+  // Auction fields
+  isAuction       Boolean   @default(false)
+  auctionEndDate  DateTime?
+  currentBid      Decimal?  @db.Decimal(10, 2)
+  minimumBid      Decimal?  @db.Decimal(10, 2)
+  buyNowPrice     Decimal?  @db.Decimal(10, 2)
+  
+  // Location
+  street    String?
+  city      String?
+  state     String?
+  zipCode   String?
+  country   String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  specifications ProductSpecification[]
+  bids           Bid[]
+  orders         Order[]
+  messages       Message[]
+  reviews        Review[]
+  
+  @@map("products")
+}
+
+model ProductSpecification {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  value     String
+  unit      String?
+  
+  @@map("product_specifications")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  amount    Decimal  @db.Decimal(10, 2)
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@map("bids")
+}
+
+model Order {
+  id       String      @id @default(cuid())
+  buyerId  String
+  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId String
+  seller   User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  productId String
+  product  Product     @relation(fields: [productId], references: [id])
+  status   OrderStatus @default(PENDING)
+  totalAmount Decimal  @db.Decimal(10, 2)
+  
+  // Shipping address
+  shippingStreet  String
+  shippingCity    String
+  shippingState   String
+  shippingZipCode String
+  shippingCountry String
+  
+  // Payment
+  paymentType     PaymentType?
+  paymentLast4    String?
+  paymentExpiryMonth Int?
+  paymentExpiryYear  Int?
+  paymentBrand    String?
+  
+  trackingNumber String?
+  notes         String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  reviews Review[]
+  
+  @@map("orders")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content    String
+  isRead     Boolean  @default(false)
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id])
+  sentAt     DateTime @default(now())
+  
+  @@map("messages")
+}
+
+model Review {
+  id       String  @id @default(cuid())
+  rating   Int     @db.SmallInt
+  comment  String?
+  productId String
+  product  Product @relation(fields: [productId], references: [id])
+  authorId String
+  author   User    @relation(fields: [authorId], references: [id])
+  orderId  String?
+  order    Order?  @relation(fields: [orderId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("reviews")
+}
+
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String
+  user    User             @relation(fields: [userId], references: [id])
+  type    NotificationType
+  title   String
+  message String
+  isRead  Boolean          @default(false)
+  data    Json?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("notifications")
+} 
