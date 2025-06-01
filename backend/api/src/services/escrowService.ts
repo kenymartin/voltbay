@@ -331,7 +331,7 @@ export class EscrowService {
         await tx.notification.create({
           data: {
             userId: escrow.sellerId,
-            type: 'ORDER_CANCELLED',
+            type: 'ORDER_CONFIRMED',
             title: 'Order Refunded',
             message: `Order for "${order.product.title}" has been refunded to the buyer.`,
             data: { 

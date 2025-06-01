@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^4.15.0",
+    "@types/express-validator": "^2.20.33",
     "axios": "^1.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",

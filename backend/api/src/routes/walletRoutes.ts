@@ -1,5 +1,4 @@
-import express from 'express'
-import { body, param, query } from 'express-validator'
+const express = require('express')
 import { authenticateUser } from '../middleware/auth'
 import { validateRequest } from '../middleware/validation'
 import WalletService from '../services/walletService'
@@ -7,6 +6,7 @@ import EscrowService from '../services/escrowService'
 import { AppError } from '../utils/errors'
 import { ApiResponse } from '../types/api'
 
+const { body, param, query } = require('express-validator')
 const router = express.Router()
 
 // Get wallet balance and details
