@@ -43,6 +43,7 @@ function App() {
       <Route path="/" element={<UserLayout />}>
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/sell" element={<CreateProductPage />} />
+        <Route path="/sell/edit/:id" element={<CreateProductPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/messages" element={<MessagesPage />} />
       </Route>

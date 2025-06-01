@@ -34,25 +34,23 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true)
     try {
-      const [productsRes, bidsRes, ordersRes] = await Promise.all([
-        apiService.get<ApiResponse<Product[]>>('/api/products/my-listings'),
-        apiService.get<ApiResponse<Bid[]>>('/api/bids/my-bids'),
-        apiService.get<ApiResponse<Order[]>>('/api/orders/my-orders')
+      const [productsRes, ordersRes] = await Promise.all([
+        apiService.get('/api/products/user/my-products'),
+        apiService.get('/api/orders/')
       ])
 
-      const userProducts = productsRes.data || []
-      const userBids = bidsRes.data || []
-      const userOrders = ordersRes.data || []
+      // Handle different response structures from backend
+      const userProducts = productsRes.data?.products || productsRes.data || []
+      const userOrders = ordersRes.data?.orders || ordersRes.data || []
 
       setProducts(userProducts)
-      setBids(userBids)
       setOrders(userOrders)
 
       // Calculate stats
       setStats({
         activeListings: userProducts.filter(p => p.status === 'ACTIVE').length,
         totalSales: userOrders.filter(o => o.sellerId === user?.id && o.status === 'DELIVERED').length,
-        activeBids: userBids.filter(b => b.isWinning).length,
+        activeBids: 0, // Will implement bids later
         pendingOrders: userOrders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED').length
       })
     } catch (error) {
@@ -278,7 +276,7 @@ export default function DashboardPage() {
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
-            onClick={() => navigate('/dashboard/create-listing')}
+            onClick={() => navigate('/sell')}
             className="btn btn-primary"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -329,7 +327,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">My Listings</h2>
         <button
-          onClick={() => navigate('/dashboard/create-listing')}
+          onClick={() => navigate('/sell')}
           className="btn btn-primary"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -349,7 +347,7 @@ export default function DashboardPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">No listings yet</h3>
           <p className="text-gray-600 mb-4">Start selling your solar products today</p>
           <button
-            onClick={() => navigate('/dashboard/create-listing')}
+            onClick={() => navigate('/sell')}
             className="btn btn-primary"
           >
             Create Your First Listing

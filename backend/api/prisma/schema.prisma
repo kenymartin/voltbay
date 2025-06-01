@@ -46,6 +46,16 @@ enum PaymentType {
   DEBIT_CARD
   PAYPAL
   BANK_TRANSFER
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
 }
 
 enum NotificationType {
@@ -58,6 +68,8 @@ enum NotificationType {
   ORDER_DELIVERED
   MESSAGE_RECEIVED
   REVIEW_RECEIVED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
 }
 
 model User {
@@ -78,6 +90,10 @@ model User {
   zipCode   String?
   country   String?
   
+  // Stripe fields
+  stripeCustomerId String?  @unique
+  stripeAccountId  String?  @unique // For sellers
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -90,6 +106,7 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
   reviews          Review[]
   notifications    Notification[]
+  payments         Payment[]
   
   // Auth-related
   emailVerificationToken String?
@@ -222,6 +239,12 @@ model Order {
   paymentExpiryYear  Int?
   paymentBrand    String?
   
+  // Stripe fields
+  stripePaymentIntentId String? @unique
+  stripeFee            Decimal? @db.Decimal(10, 2)
+  platformFee          Decimal? @db.Decimal(10, 2)
+  sellerAmount         Decimal? @db.Decimal(10, 2)
+  
   trackingNumber String?
   notes         String?
   
@@ -230,6 +253,7 @@ model Order {
   
   // Relations
   reviews Review[]
+  payments Payment[]
   
   @@map("orders")
 }
@@ -279,4 +303,43 @@ model Notification {
   createdAt DateTime @default(now())
   
   @@map("notifications")
+}
+
+model Payment {
+  id     String        @id @default(cuid())
+  userId String
+  user   User          @relation(fields: [userId], references: [id])
+  orderId String?
+  order  Order?        @relation(fields: [orderId], references: [id])
+  
+  // Stripe fields
+  stripePaymentIntentId String  @unique
+  stripeChargeId       String?
+  amount               Decimal @db.Decimal(10, 2)
+  currency             String  @default("usd")
+  status               PaymentStatus
+  
+  // Metadata
+  description String?
+  metadata    Json?
+  
+  // Payment method details
+  paymentMethodType String? // card, bank_transfer, etc.
+  cardBrand        String?
+  cardLast4        String?
+  cardExpMonth     Int?
+  cardExpYear      Int?
+  
+  // Fees
+  stripeFee    Decimal? @db.Decimal(10, 2)
+  platformFee  Decimal? @db.Decimal(10, 2)
+  netAmount    Decimal? @db.Decimal(10, 2)
+  
+  // Timestamps
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  paidAt       DateTime?
+  refundedAt   DateTime?
+  
+  @@map("payments")
 } 

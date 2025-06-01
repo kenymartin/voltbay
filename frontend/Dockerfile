@@ -1,6 +1,6 @@
 # Frontend Dockerfile
-FROM node:18-alpine
-
+# FROM node:18-alpine
+FROM ubuntu:22.04
 # Set working directory
 WORKDIR /app
 

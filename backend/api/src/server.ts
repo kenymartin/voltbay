@@ -16,6 +16,8 @@ import orderRoutes from './routes/orderRoutes'
 import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
+import paymentRoutes from './routes/payments'
+import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
 const PORT = process.env.PORT || 5001
@@ -66,6 +68,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/payments', paymentRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -75,7 +78,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'voltbay-api',
     version: '1.0.0',
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    auctionScheduler: auctionScheduler.getStatus()
   })
 })
 
@@ -92,6 +96,7 @@ app.get('/', (req, res) => {
       messages: '/api/messages',
       notifications: '/api/notifications',
       upload: '/api/upload',
+      payments: '/api/payments',
       health: '/health'
     }
   })
@@ -116,15 +121,22 @@ app.listen(PORT, () => {
   logger.info(`[${new Date().toISOString()}] INFO: Environment: ${process.env.NODE_ENV}`)
   logger.info(`[${new Date().toISOString()}] INFO: CORS origins: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'localhost:3000, localhost:3001, localhost:5173'}`)
   logger.info(`[${new Date().toISOString()}] INFO: Upload directory: ${uploadDir}`)
+  logger.info(`[${new Date().toISOString()}] INFO: Payment processing enabled with Stripe`)
+  
+  // Start auction scheduler
+  auctionScheduler.start()
+  logger.info(`[${new Date().toISOString()}] INFO: Auction scheduler started`)
 })
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully')
+  auctionScheduler.stop()
   process.exit(0)
 })
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully')
+  auctionScheduler.stop()
   process.exit(0)
 })

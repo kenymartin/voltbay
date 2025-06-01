@@ -58,8 +58,8 @@ export default function SearchPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await apiService.get<ApiResponse<Category[]>>('/api/categories')
-      setCategories(response.data || [])
+      const response = await apiService.get<ApiResponse<{ categories: Category[] }>>('/api/categories')
+      setCategories(response.data?.categories || [])
     } catch (error) {
       console.error('Failed to load categories:', error)
     }

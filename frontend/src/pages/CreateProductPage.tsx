@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { 
   Package, 
@@ -56,6 +56,8 @@ interface ImageUpload {
 export default function CreateProductPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const { id: productId } = useParams()
+  const isEditing = !!productId
   
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
