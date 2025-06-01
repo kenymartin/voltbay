@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import CartSidebar from '../components/CartSidebar'
 
 export default function UserLayout() {
   return (
@@ -9,6 +10,7 @@ export default function UserLayout() {
         <h1 className="text-2xl font-bold mb-8">User Dashboard</h1>
         <Outlet />
       </div>
+      <CartSidebar />
     </div>
   )
 } 

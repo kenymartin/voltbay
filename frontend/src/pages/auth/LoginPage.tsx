@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
-import { apiService } from '../../services/api'
+import apiService from '../../services/api'
 
 interface LoginForm {
   email: string

@@ -198,32 +198,30 @@ model Bid {
 }
 
 model Order {
-  id       String      @id @default(cuid())
-  buyerId  String
-  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId String
-  seller   User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  productId String
-  product  Product     @relation(fields: [productId], references: [id])
-  status   OrderStatus @default(PENDING)
-  totalAmount Decimal  @db.Decimal(10, 2)
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique
+  buyerId       String
+  buyer         User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId      String
+  seller        User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  quantity      Int         @default(1)
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        OrderStatus @default(PENDING)
+  paymentType   PaymentType
   
-  // Shipping address
-  shippingStreet  String
-  shippingCity    String
-  shippingState   String
-  shippingZipCode String
-  shippingCountry String
+  // Shipping
+  shippingStreet  String?
+  shippingCity    String?
+  shippingState   String?
+  shippingZip     String?
+  shippingCountry String?
   
-  // Payment
-  paymentType     PaymentType?
-  paymentLast4    String?
-  paymentExpiryMonth Int?
-  paymentExpiryYear  Int?
-  paymentBrand    String?
-  
+  // Tracking
   trackingNumber String?
-  notes         String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

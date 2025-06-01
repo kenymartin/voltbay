@@ -1,4 +1,8 @@
+import dotenv from 'dotenv'
 import { logger } from '../utils/logger'
+
+// Load environment variables first
+dotenv.config()
 
 export interface EnvConfig {
   NODE_ENV: string
@@ -52,7 +56,7 @@ const validateEnv = (): EnvConfig => {
     JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
     RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
+    RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10) // Increased from 100 to 1000
   }
 }
 

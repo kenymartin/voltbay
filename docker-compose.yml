@@ -7,8 +7,7 @@ services:
     container_name: voltbay-postgres
     environment:
       POSTGRES_DB: voltbay
-      POSTGRES_USER: voltbay_user
-      POSTGRES_PASSWORD: voltbay_password
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
@@ -17,7 +16,7 @@ services:
     networks:
       - voltbay-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U voltbay_user -d voltbay"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d voltbay"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +48,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4000
-      DATABASE_URL: postgresql://voltbay_user:voltbay_password@postgres:5432/voltbay
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/voltbay
       REDIS_URL: redis://redis:6379
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
@@ -80,7 +79,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5001
-      DATABASE_URL: postgresql://voltbay_user:voltbay_password@postgres:5432/voltbay
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/voltbay
       REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth:4000
       JWT_SECRET: your-super-secret-jwt-key-change-in-production

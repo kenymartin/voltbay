@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Search, Zap, Shield, TrendingUp, Star, ArrowRight } from 'lucide-react'
+import SEO from '../components/SEO'
 
 export default function HomePage() {
   const featuredCategories = [
@@ -77,6 +78,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <SEO 
+        title="Solar Products Marketplace - Buy, Sell & Auction Solar Equipment"
+        description="Discover the world's largest marketplace for solar products. Find solar panels, inverters, batteries, and complete systems. Buy directly or participate in auctions for the best deals on renewable energy equipment."
+        keywords="solar panels, solar marketplace, solar equipment auction, photovoltaic panels, solar inverters, solar batteries, renewable energy, clean energy marketplace, solar deals"
+        url={window.location.href}
+        type="website"
+      />
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -92,17 +101,17 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  to="/search"
+                  to="/products"
                   className="btn bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
                 >
                   <Search className="w-5 h-5 mr-2" />
                   Browse Products
                 </Link>
                 <Link
-                  to="/sell"
+                  to="/auctions"
                   className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 text-lg font-semibold"
                 >
-                  Start Selling
+                  View Auctions
                 </Link>
               </div>
             </div>

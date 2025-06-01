@@ -3,7 +3,6 @@ import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import rateLimit from 'express-rate-limit'
-import dotenv from 'dotenv'
 
 import { errorHandler } from './middleware/errorHandler'
 import { notFoundHandler } from './middleware/notFoundHandler'
@@ -11,9 +10,6 @@ import authRoutes from './routes/authRoutes'
 import { connectRedis } from './config/redis'
 import { logger } from './utils/logger'
 import { envConfig } from './config/env'
-
-// Load environment variables
-dotenv.config()
 
 const app = express()
 const PORT = envConfig.PORT
@@ -23,7 +19,7 @@ app.use(helmet())
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://voltbay.com', 'https://www.voltbay.com']
-    : ['http://localhost:3000', 'http://localhost:5173'],
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -32,13 +28,17 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: envConfig.RATE_LIMIT_WINDOW_MS,
-  max: envConfig.RATE_LIMIT_MAX_REQUESTS,
+  max: envConfig.NODE_ENV === 'development' ? 10000 : envConfig.RATE_LIMIT_MAX_REQUESTS,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health'
+  }
 })
 
 app.use(limiter)
@@ -92,7 +92,7 @@ async function startServer() {
     app.listen(PORT, () => {
       logger.info(`[${new Date().toISOString()}] INFO: Auth service running on port ${PORT}`)
       logger.info(`[${new Date().toISOString()}] INFO: Environment: ${process.env.NODE_ENV}`)
-      logger.info(`[${new Date().toISOString()}] INFO: CORS origins: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'localhost:3000, localhost:5173'}`)
+      logger.info(`[${new Date().toISOString()}] INFO: CORS origins: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'localhost:3000, localhost:3001, localhost:5173'}`)
     })
   } catch (error) {
     logger.error('Failed to start auth service:', error)

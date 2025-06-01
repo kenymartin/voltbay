@@ -11,6 +11,7 @@ class ApiService {
     this.api = axios.create({
       baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
       timeout: 10000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -20,6 +21,7 @@ class ApiService {
     this.authApi = axios.create({
       baseURL: import.meta.env.VITE_AUTH_URL || 'http://localhost:4000',
       timeout: 10000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -47,18 +49,38 @@ class ApiService {
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true
 
+        // Don't retry if this was already a refresh token request to prevent infinite loops
+        if (originalRequest.url?.includes('/refresh-token')) {
+          useAuthStore.getState().logout()
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
+
+        // Don't try to refresh tokens for authentication endpoints (login, register, etc.)
+        const authEndpoints = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
+        const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))
+        
+        if (isAuthEndpoint) {
+          // For auth endpoints, just pass through the error without trying to refresh
+          return Promise.reject(error)
+        }
+
         try {
-          // Try to refresh token
-          const refreshResponse = await this.authApi.post('/api/auth/refresh-token')
+          // Try to refresh token - this should automatically include cookies
+          const refreshResponse = await this.authApi.post('/api/auth/refresh-token', {}, {
+            _skipAuthInterceptor: true // Custom flag to skip auth interceptor for this request
+          })
+          
           const { accessToken } = refreshResponse.data.data
           
           useAuthStore.getState().updateToken(accessToken)
           
-          // Retry original request
+          // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`
           return axios(originalRequest)
         } catch (refreshError) {
           // Refresh failed, logout user
+          console.error('Token refresh failed:', refreshError)
           useAuthStore.getState().logout()
           window.location.href = '/login'
           return Promise.reject(refreshError)
@@ -81,7 +103,17 @@ class ApiService {
     this.api.interceptors.request.use(requestInterceptor)
     this.api.interceptors.response.use(responseInterceptor, errorInterceptor)
     
-    this.authApi.interceptors.request.use(requestInterceptor)
+    // For auth API, we need different interceptors to handle refresh token properly
+    this.authApi.interceptors.request.use((config: AxiosRequestConfig) => {
+      // Don't add auth header to refresh token requests, but add it to others
+      if (!config.url?.includes('/refresh-token') && !config._skipAuthInterceptor) {
+        const { accessToken } = useAuthStore.getState()
+        if (accessToken && config.headers) {
+          config.headers.Authorization = `Bearer ${accessToken}`
+        }
+      }
+      return config
+    })
     this.authApi.interceptors.response.use(responseInterceptor, errorInterceptor)
   }
 
@@ -119,6 +151,11 @@ class ApiService {
 
   async authPost<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.authApi.post(url, data, config)
+    return response.data
+  }
+
+  async authPut<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.authApi.put(url, data, config)
     return response.data
   }
 

@@ -10,6 +10,12 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import SearchPage from './pages/SearchPage'
+import AuctionsPage from './pages/AuctionsPage'
+import ProductsPage from './pages/ProductsPage'
+import ProfilePage from './pages/ProfilePage'
+import CreateProductPage from './pages/CreateProductPage'
+import CheckoutPage from './pages/CheckoutPage'
+import OrderSuccessPage from './pages/OrderSuccessPage'
 import DashboardPage from './pages/user/DashboardPage'
 import MessagesPage from './pages/user/MessagesPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
@@ -19,36 +25,36 @@ function App() {
   const { user } = useAuthStore()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        {/* Guest Routes */}
-        <Route path="/" element={<GuestLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="products/:id" element={<ProductDetailPage />} />
-          <Route path="search" element={<SearchPage />} />
-        </Route>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<GuestLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/auctions" element={<AuctionsPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-success" element={<OrderSuccessPage />} />
+      </Route>
 
-        {/* User Routes */}
-        {user && (
-          <Route path="/dashboard" element={<UserLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="messages" element={<MessagesPage />} />
-          </Route>
-        )}
+      {/* Protected user routes */}
+      <Route path="/" element={<UserLayout />}>
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/sell" element={<CreateProductPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
+      </Route>
 
-        {/* Admin Routes */}
-        {user?.role === 'ADMIN' && (
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboardPage />} />
-          </Route>
-        )}
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+      </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </div>
+      {/* Catch all */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   )
 }
 

@@ -25,7 +25,7 @@ app.use(helmet())
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://voltbay.com', 'https://www.voltbay.com']
-    : ['http://localhost:3000', 'http://localhost:5173'],
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -114,7 +114,7 @@ app.use(errorHandler)
 app.listen(PORT, () => {
   logger.info(`[${new Date().toISOString()}] INFO: API service running on port ${PORT}`)
   logger.info(`[${new Date().toISOString()}] INFO: Environment: ${process.env.NODE_ENV}`)
-  logger.info(`[${new Date().toISOString()}] INFO: CORS origins: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'localhost:3000, localhost:5173'}`)
+  logger.info(`[${new Date().toISOString()}] INFO: CORS origins: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'localhost:3000, localhost:3001, localhost:5173'}`)
   logger.info(`[${new Date().toISOString()}] INFO: Upload directory: ${uploadDir}`)
 })
 
@@ -127,4 +127,4 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully')
   process.exit(0)
-}) 
+})

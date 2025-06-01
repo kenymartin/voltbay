@@ -5,6 +5,15 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
+  // Delete existing users first
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: ['admin@voltbay.com', 'testuser@example.com']
+      }
+    }
+  })
+
   // Create categories
   const solarPanels = await prisma.category.upsert({
     where: { name: 'Solar Panels' },
@@ -98,15 +107,25 @@ async function main() {
   })
 
   // Create admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@voltbay.com' },
-    update: {},
-    create: {
+  const adminUser = await prisma.user.create({
+    data: {
       email: 'admin@voltbay.com',
-      password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/hL/.LVtpO', // password123
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Admin',
       lastName: 'User',
       role: 'ADMIN',
+      verified: true
+    }
+  })
+
+  // Create test user
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'testuser@example.com',
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123 (same hash for testing)
+      firstName: 'Test',
+      lastName: 'User',
+      role: 'USER',
       verified: true
     }
   })
@@ -120,6 +139,7 @@ async function main() {
     mountingSystems: mountingSystems.name
   })
   console.log('👤 Admin user created:', adminUser.email)
+  console.log('👤 Test user created:', testUser.email)
 }
 
 main()

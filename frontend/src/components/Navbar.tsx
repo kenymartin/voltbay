@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { apiService } from '../services/api'
+import { useCartStore } from '../store/cartStore'
+import apiService from '../services/api'
 import { 
   User, 
   LogOut, 
@@ -17,7 +18,8 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, logout } = useAuthStore()
+  const { getTotalItems, toggleCart } = useCartStore()
   const navigate = useNavigate()
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
@@ -37,6 +39,11 @@ export default function Navbar() {
     }
   }, [isProfileMenuOpen])
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [])
+
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
@@ -49,6 +56,8 @@ export default function Navbar() {
       setIsProfileMenuOpen(false)
     }
   }
+
+  const cartItemCount = getTotalItems()
 
   return (
     <nav className="bg-white shadow-lg">
@@ -112,6 +121,20 @@ export default function Navbar() {
                 <button className="text-gray-500 hover:text-gray-700">
                   <Bell className="h-6 w-6" />
                 </button>
+
+                {/* Shopping Cart */}
+                <button
+                  onClick={toggleCart}
+                  className="relative text-gray-500 hover:text-gray-700 p-2"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
+                </button>
+
                 <Link
                   to="/sell"
                   className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -179,6 +202,19 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                {/* Guest users can also see the cart */}
+                <button
+                  onClick={toggleCart}
+                  className="relative text-gray-500 hover:text-gray-700 p-2"
+                >
+                  <ShoppingCart className="h-6 w-6" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
+                </button>
+
                 {/* Guest user buttons */}
                 <Link
                   to="/login"
@@ -245,6 +281,18 @@ export default function Navbar() {
                 />
               </div>
             </div>
+
+            {/* Mobile Cart */}
+            <button
+              onClick={() => {
+                toggleCart()
+                setIsMenuOpen(false)
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <ShoppingCart className="h-5 w-5 mr-3" />
+              Cart ({cartItemCount})
+            </button>
 
             {isAuthenticated && (
               <>
