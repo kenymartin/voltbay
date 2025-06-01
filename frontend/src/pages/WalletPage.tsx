@@ -1,12 +1,12 @@
 import React from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuthStore } from '../store/authStore'
 import WalletDashboard from '../components/WalletDashboard'
 import { Navigate } from 'react-router-dom'
 
 const WalletPage: React.FC = () => {
-  const { user, loading } = useAuth()
+  const { user, isLoading } = useAuthStore()
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
