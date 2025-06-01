@@ -11,7 +11,8 @@ import {
   Search,
   Heart,
   ShoppingCart,
-  Bell
+  Bell,
+  Wallet
 } from 'lucide-react'
 
 export default function Navbar() {
@@ -167,6 +168,14 @@ export default function Navbar() {
                         Dashboard
                       </Link>
                       <Link
+                        to="/wallet"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        <Wallet className="h-4 w-4" />
+                        <span>Wallet</span>
+                      </Link>
+                      <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsProfileMenuOpen(false)}
@@ -303,6 +312,14 @@ export default function Navbar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  to="/wallet"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Wallet className="h-5 w-5 mr-3" />
+                  Wallet
                 </Link>
                 <Link
                   to="/profile"
