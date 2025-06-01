@@ -72,6 +72,26 @@ enum NotificationType {
   PAYMENT_FAILED
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  REFUND
+  AUCTION_HOLD
+  AUCTION_RELEASE
+  SELLER_PAYOUT
+  PLATFORM_FEE
+  ESCROW_HOLD
+  ESCROW_RELEASE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -107,6 +127,7 @@ model User {
   reviews          Review[]
   notifications    Notification[]
   payments         Payment[]
+  wallet           Wallet?
   
   // Auth-related
   emailVerificationToken String?
@@ -342,4 +363,51 @@ model Payment {
   refundedAt   DateTime?
   
   @@map("payments")
+}
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Decimal  @default(0.00) @db.Decimal(10, 2)
+  lockedBalance Decimal  @default(0.00) @db.Decimal(10, 2) // For pending auctions
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  transactions  WalletTransaction[]
+  escrows       Escrow[]
+  
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  status      TransactionStatus @default(PENDING)
+  description String
+  reference   String?           // Order ID, Payment ID, etc.
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@map("wallet_transactions")
+}
+
+model Escrow {
+  id          String            @id @default(cuid())
+  orderId     String            @unique
+  buyerWalletId String
+  buyerWallet Wallet            @relation(fields: [buyerWalletId], references: [id])
+  sellerId    String
+  amount      Decimal           @db.Decimal(10, 2)
+  status      TransactionStatus @default(PENDING)
+  reason      String?
+  releasedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  @@map("escrows")
 } 
