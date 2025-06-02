@@ -17,7 +17,7 @@ import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
 import paymentRoutes from './routes/payments'
-// import walletRoutes from './routes/walletRoutes'
+import walletRoutes from './routes/walletRoutes'
 import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
@@ -70,7 +70,7 @@ app.use('/api/messages', messageRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/payments', paymentRoutes)
-// app.use('/api/wallet', walletRoutes)
+app.use('/api/wallet', walletRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -99,7 +99,7 @@ app.get('/', (req, res) => {
       notifications: '/api/notifications',
       upload: '/api/upload',
       payments: '/api/payments',
-      // wallet: '/api/wallet',
+      wallet: '/api/wallet',
       health: '/health'
     }
   })
