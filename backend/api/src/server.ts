@@ -17,6 +17,7 @@ import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
 import paymentRoutes from './routes/payments'
+// import walletRoutes from './routes/walletRoutes'
 import walletRoutes from './routes/walletRoutes'
 import { auctionScheduler } from './services/auctionScheduler'
 
@@ -127,19 +128,19 @@ app.listen(PORT, () => {
   logger.info(`[${new Date().toISOString()}] INFO: Payment processing enabled with Stripe`)
   
   // Start auction scheduler
-  auctionScheduler.start()
-  logger.info(`[${new Date().toISOString()}] INFO: Auction scheduler started`)
+  // auctionScheduler.start()
+  // logger.info(`[${new Date().toISOString()}] INFO: Auction scheduler started`)
 })
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully')
-  auctionScheduler.stop()
+  // auctionScheduler.stop()
   process.exit(0)
 })
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully')
-  auctionScheduler.stop()
+  // auctionScheduler.stop()
   process.exit(0)
 })
