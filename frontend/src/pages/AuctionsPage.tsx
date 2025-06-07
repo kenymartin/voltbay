@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, Gavel, Eye, Search, Filter, Star, Calendar, TrendingUp } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductCondition, ProductSortBy, SortOrder, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import { ProductSortBy, SortOrder } from '../../../shared/types'
 import SEO from '../components/SEO'
 
 export default function AuctionsPage() {

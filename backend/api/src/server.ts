@@ -16,6 +16,9 @@ import orderRoutes from './routes/orderRoutes'
 import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
+import bidRoutes from "./routes/bidRoutes"
+import adminRoutes from "./routes/adminRoutes"
+// import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
 const PORT = process.env.PORT || 5001
@@ -66,6 +69,8 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/bids', bidRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {

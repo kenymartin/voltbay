@@ -557,4 +557,29 @@ export class ProductService {
 
     return products
   }
+
+  async getUserBids(userId: string) {
+    const bids = await prisma.bid.findMany({
+      where: { userId },
+      include: {
+        product: {
+          include: {
+            category: true,
+            owner: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    return bids
+  }
 } 

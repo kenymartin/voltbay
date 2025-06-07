@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Users, Package, TrendingUp, AlertTriangle, Eye, Ban, CheckCircle, XCircle, Edit, Trash2, Plus, Search } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../../services/api'
-import type { User, Product, Category, Order, ApiResponse } from '../../../../shared/types'
+import { type User, type Product, type Category, type Order, type ApiResponse, ProductStatus } from '../../../../shared/types'
 
 type TabType = 'overview' | 'users' | 'products' | 'categories' | 'orders'
 
@@ -224,9 +224,9 @@ export default function AdminDashboardPage() {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span className={`px-2 py-1 text-xs rounded ${
-          product.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-          product.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-          product.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
+          product.status === ProductStatus.ACTIVE ? 'bg-green-100 text-green-800' :
+          product.status === ProductStatus.DRAFT ? 'bg-yellow-100 text-yellow-800' :
+          product.status === ProductStatus.SUSPENDED ? 'bg-red-100 text-red-800' :
           'bg-gray-100 text-gray-800'
         }`}>
           {product.status}
@@ -244,7 +244,7 @@ export default function AdminDashboardPage() {
           >
             <Eye className="w-4 h-4" />
           </button>
-          {product.status === 'PENDING' && (
+          {product.status === ProductStatus.PENDING && (
             <>
               <button
                 onClick={() => handleProductAction(product.id, 'approve')}

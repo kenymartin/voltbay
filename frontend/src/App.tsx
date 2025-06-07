@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import GuestLayout from './layouts/GuestLayout'
 import UserLayout from './layouts/UserLayout'
@@ -12,6 +12,7 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import SearchPage from './pages/SearchPage'
 import AuctionsPage from './pages/AuctionsPage'
 import ProductsPage from './pages/ProductsPage'
+import CategoriesPage from './pages/CategoriesPage'
 import ProfilePage from './pages/ProfilePage'
 import CreateProductPage from './pages/CreateProductPage'
 import CheckoutPage from './pages/CheckoutPage'
@@ -22,37 +23,38 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
-  const { user } = useAuthStore()
-
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes using GuestLayout */}
       <Route path="/" element={<GuestLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/auctions" element={<AuctionsPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order-success" element={<OrderSuccessPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="products" element={<ProductsPage />} />
+        <Route path="auctions" element={<AuctionsPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
+        <Route path="product/:id" element={<ProductDetailPage />} />
+        <Route path="products/:id" element={<ProductDetailPage />} />
+        <Route path="search" element={<SearchPage />} />
+        <Route path="checkout" element={<CheckoutPage />} />
+        <Route path="order-success" element={<OrderSuccessPage />} />
       </Route>
 
-      {/* Protected user routes */}
+      {/* Protected user routes using UserLayout */}
       <Route path="/" element={<UserLayout />}>
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/sell" element={<CreateProductPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="sell" element={<CreateProductPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="messages" element={<MessagesPage />} />
+        <Route path="products/my" element={<Navigate to="/dashboard?tab=listings" replace />} />
       </Route>
 
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+      {/* Admin routes using AdminLayout */}
+      <Route path="/" element={<AdminLayout />}>
+        <Route path="admin/dashboard" element={<AdminDashboardPage />} />
       </Route>
 
-      {/* Catch all */}
+      {/* Catch all routes */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

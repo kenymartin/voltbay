@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Package, Gavel, ShoppingCart, User, Eye, Edit, Trash2, Clock, CheckCircle } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../../store/authStore'
@@ -11,6 +11,7 @@ type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'profile'
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   
   // Data states
@@ -28,6 +29,14 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
+    // Check for tab parameter in URL
+    const tabParam = searchParams.get('tab') as TabType
+    if (tabParam && ['overview', 'listings', 'bids', 'orders', 'profile'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     fetchDashboardData()
   }, [])
 
@@ -35,14 +44,14 @@ export default function DashboardPage() {
     setLoading(true)
     try {
       const [productsRes, bidsRes, ordersRes] = await Promise.all([
-        apiService.get<ApiResponse<Product[]>>('/api/products/my-listings'),
-        apiService.get<ApiResponse<Bid[]>>('/api/bids/my-bids'),
-        apiService.get<ApiResponse<Order[]>>('/api/orders/my-orders')
+        apiService.get<ApiResponse<{ products: Product[] }>>('/api/products/my-listings'),
+        apiService.get<ApiResponse<{ bids: Bid[] }>>('/api/bids/my-bids'),
+        apiService.get<ApiResponse<{ orders: Order[], pagination: any }>>('/api/orders/my-orders')
       ])
 
-      const userProducts = productsRes.data || []
-      const userBids = bidsRes.data || []
-      const userOrders = ordersRes.data || []
+      const userProducts = (productsRes.data as any)?.products || []
+      const userBids = (bidsRes.data as any)?.bids || []
+      const userOrders = (ordersRes.data as any)?.orders || []
 
       setProducts(userProducts)
       setBids(userBids)
@@ -445,7 +454,7 @@ export default function DashboardPage() {
             <input
               type="text"
               value={user?.firstName || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
               readOnly
             />
           </div>
@@ -454,7 +463,7 @@ export default function DashboardPage() {
             <input
               type="text"
               value={user?.lastName || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
               readOnly
             />
           </div>
@@ -463,7 +472,7 @@ export default function DashboardPage() {
             <input
               type="email"
               value={user?.email || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
               readOnly
             />
           </div>
@@ -473,16 +482,23 @@ export default function DashboardPage() {
               type="tel"
               value={user?.phone || ''}
               placeholder="Not provided"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700"
               readOnly
             />
           </div>
         </div>
 
-        <div className="mt-6">
-          <button className="btn btn-primary">
-            Edit Profile
+        <div className="mt-6 flex items-center justify-between">
+          <button 
+            onClick={() => navigate('/profile')}
+            className="btn btn-primary flex items-center space-x-2"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit Profile</span>
           </button>
+          <p className="text-sm text-gray-500">
+            Click "Edit Profile" to update your personal information
+          </p>
         </div>
       </div>
     </div>

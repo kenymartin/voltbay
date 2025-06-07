@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { AuthController } from '../controllers/authController'
 import { authMiddleware } from '../middleware/authMiddleware'
+import { validate } from '../middleware/validation'
+import { updateProfileSchema } from '../validators/authValidators'
 
 const router = Router()
 const authController = new AuthController()
@@ -16,7 +18,7 @@ router.post('/reset-password', authController.resetPassword)
 
 // Protected routes
 router.get('/profile', authMiddleware.authenticate, authController.getProfile)
-router.put('/profile', authMiddleware.authenticate, authController.updateProfile)
+router.put('/profile', authMiddleware.authenticate, validate(updateProfileSchema), authController.updateProfile)
 
 // Health check
 router.get('/health', (req, res) => {

@@ -8,7 +8,7 @@ import SEO from '../components/SEO'
 import type { User as UserType, ApiResponse } from '../../../shared/types'
 
 export default function ProfilePage() {
-  const { user: authUser, updateUser } = useAuthStore()
+  const { user: authUser, setUser: updateUser } = useAuthStore()
   const navigate = useNavigate()
   
   const [user, setUser] = useState<UserType | null>(authUser)

@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Search, Filter, Grid, List, SlidersHorizontal } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductSearchParams, ProductCondition, ProductSortBy, SortOrder, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import type { Product, Category, ProductSearchParams, ProductCondition, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import { ProductSortBy, SortOrder } from '../../../shared/types'
+import SEO from '../components/SEO'
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()

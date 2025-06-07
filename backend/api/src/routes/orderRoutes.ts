@@ -11,6 +11,7 @@ router.use(authMiddleware.authenticate)
 // Order management
 router.post('/', orderController.createOrder)
 router.get('/', orderController.getOrders)
+router.get('/my-orders', orderController.getOrders)
 router.get('/stats', orderController.getOrderStats)
 router.get('/:id', orderController.getOrder)
 

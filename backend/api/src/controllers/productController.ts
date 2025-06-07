@@ -207,4 +207,23 @@ export class ProductController {
       next(error)
     }
   }
+
+  getUserBids = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id
+      
+      if (!userId) {
+        throw new AppError('Authentication required', 401)
+      }
+
+      const bids = await this.productService.getUserBids(userId)
+      
+      res.json({
+        success: true,
+        data: { bids }
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
 } 

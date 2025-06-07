@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
 
@@ -9,7 +9,7 @@ class ApiService {
   constructor() {
     // Main API instance
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+      baseURL: (import.meta as any).env.VITE_API_URL || 'http://localhost:5000',
       timeout: 10000,
       withCredentials: true,
       headers: {
@@ -19,7 +19,7 @@ class ApiService {
 
     // Auth API instance
     this.authApi = axios.create({
-      baseURL: import.meta.env.VITE_AUTH_URL || 'http://localhost:4000',
+      baseURL: (import.meta as any).env.VITE_AUTH_URL || 'http://localhost:4000',
       timeout: 10000,
       withCredentials: true,
       headers: {
@@ -68,11 +68,12 @@ class ApiService {
         try {
           // Try to refresh token - this should automatically include cookies
           const refreshResponse = await this.authApi.post('/api/auth/refresh-token', {}, {
-            _skipAuthInterceptor: true // Custom flag to skip auth interceptor for this request
+            headers: {
+              skipAuthInterceptor: true // Custom flag to skip auth interceptor for this request
+            }
           })
           
           const { accessToken } = refreshResponse.data.data
-          
           useAuthStore.getState().updateToken(accessToken)
           
           // Retry original request with new token
@@ -98,15 +99,16 @@ class ApiService {
 
       return Promise.reject(error)
     }
-
     // Apply interceptors to both instances
-    this.api.interceptors.request.use(requestInterceptor)
+    this.api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      return requestInterceptor(config) as InternalAxiosRequestConfig
+    })
     this.api.interceptors.response.use(responseInterceptor, errorInterceptor)
     
     // For auth API, we need different interceptors to handle refresh token properly
-    this.authApi.interceptors.request.use((config: AxiosRequestConfig) => {
+    this.authApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       // Don't add auth header to refresh token requests, but add it to others
-      if (!config.url?.includes('/refresh-token') && !config._skipAuthInterceptor) {
+      if (!config.url?.includes('/refresh-token') && !config.headers?.skipAuthInterceptor) {
         const { accessToken } = useAuthStore.getState()
         if (accessToken && config.headers) {
           config.headers.Authorization = `Bearer ${accessToken}`

@@ -52,6 +52,7 @@ export interface Product {
 }
 
 export enum ProductStatus {
+  PENDING = 'PENDING',
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   SOLD = 'SOLD',
@@ -228,7 +229,7 @@ export enum ProductSortBy {
   CREATED_AT = 'createdAt',
   PRICE = 'price',
   TITLE = 'title',
-  ENDING_SOON = 'endingSoon'
+  ENDING_SOON = 'endDate'
 }
 
 export enum SortOrder {
