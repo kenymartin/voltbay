@@ -1,15 +1,281 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  password                 String
+  firstName                String?
+  lastName                 String?
+  role                     UserRole       @default(USER)
+  verified                 Boolean        @default(false)
+  avatar                   String?
+  phone                    String?
+  street                   String?
+  city                     String?
+  state                    String?
+  zipCode                  String?
+  country                  String?
+  stripeCustomerId         String?        @unique
+  stripeAccountId          String?        @unique
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  bids                     Bid[]
+  receivedMessages         Message[]      @relation("ReceivedMessages")
+  sentMessages             Message[]      @relation("SentMessages")
+  notifications            Notification[]
+  ordersAsBuyer            Order[]        @relation("BuyerOrders")
+  ordersAsSeller           Order[]        @relation("SellerOrders")
+  payments                 payments[]
+  products                 Product[]
+  refreshTokens            RefreshToken[]
+  reviews                  Review[]
+  wallet                   Wallet?
+
+  @@map("users")
+}
+
+model Wallet {
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  balance             Decimal             @default(0.00) @db.Decimal(10, 2)
+  lockedBalance       Decimal             @default(0.00) @db.Decimal(10, 2)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  escrows             escrows[]
+  wallet_transactions WalletTransaction[]
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  status      TransactionStatus @default(PENDING)
+  description String
+  reference   String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  wallets     Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_transactions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  parentId    String?
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String
+  price          Decimal                @db.Decimal(10, 2)
+  imageUrls      String[]
+  status         ProductStatus          @default(DRAFT)
+  condition      ProductCondition
+  categoryId     String
+  ownerId        String
+  isAuction      Boolean                @default(false)
+  auctionEndDate DateTime?
+  currentBid     Decimal?               @db.Decimal(10, 2)
+  minimumBid     Decimal?               @db.Decimal(10, 2)
+  buyNowPrice    Decimal?               @db.Decimal(10, 2)
+  street         String?
+  city           String?
+  state          String?
+  zipCode        String?
+  country        String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  bids           Bid[]
+  messages       Message[]
+  orders         Order[]
+  specifications ProductSpecification[]
+  category       Category               @relation(fields: [categoryId], references: [id])
+  owner          User                   @relation(fields: [ownerId], references: [id])
+  reviews        Review[]
+
+  @@map("products")
+}
+
+model ProductSpecification {
+  id        String  @id @default(cuid())
+  productId String
+  name      String
+  value     String
+  unit      String?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_specifications")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  amount    Decimal  @db.Decimal(10, 2)
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("bids")
+}
+
+model Order {
+  id                    String       @id @default(cuid())
+  buyerId               String
+  sellerId              String
+  productId             String
+  status                OrderStatus  @default(PENDING)
+  totalAmount           Decimal      @db.Decimal(10, 2)
+  shippingStreet        String
+  shippingCity          String
+  shippingState         String
+  shippingZipCode       String
+  shippingCountry       String
+  paymentType           PaymentType?
+  paymentLast4          String?
+  paymentExpiryMonth    Int?
+  paymentExpiryYear     Int?
+  paymentBrand          String?
+  stripePaymentIntentId String?      @unique
+  stripeFee             Decimal?     @db.Decimal(10, 2)
+  platformFee           Decimal?     @db.Decimal(10, 2)
+  sellerAmount          Decimal?     @db.Decimal(10, 2)
+  trackingNumber        String?
+  notes                 String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  buyer                 User         @relation("BuyerOrders", fields: [buyerId], references: [id])
+  product               Product      @relation(fields: [productId], references: [id])
+  seller                User         @relation("SellerOrders", fields: [sellerId], references: [id])
+  payments              payments[]
+  reviews               Review[]
+
+  @@map("orders")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  productId  String?
+  sentAt     DateTime @default(now())
+  product    Product? @relation(fields: [productId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @db.SmallInt
+  comment   String?
+  productId String
+  authorId  String
+  orderId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model escrows {
+  id            String            @id
+  orderId       String            @unique
+  buyerWalletId String
+  sellerId      String
+  amount        Decimal           @db.Decimal(10, 2)
+  status        TransactionStatus @default(PENDING)
+  reason        String?
+  releasedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime
+  wallets       Wallet            @relation(fields: [buyerWalletId], references: [id])
+}
+
+model payments {
+  id                    String        @id
+  userId                String
+  orderId               String?
+  stripePaymentIntentId String        @unique
+  stripeChargeId        String?
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("usd")
+  status                PaymentStatus
+  description           String?
+  metadata              Json?
+  paymentMethodType     String?
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+  stripeFee             Decimal?      @db.Decimal(10, 2)
+  platformFee           Decimal?      @db.Decimal(10, 2)
+  netAmount             Decimal?      @db.Decimal(10, 2)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime
+  paidAt                DateTime?
+  refundedAt            DateTime?
+  orders                Order?        @relation(fields: [orderId], references: [id])
+  users                 User          @relation(fields: [userId], references: [id])
 }
 
 enum UserRole {
@@ -48,6 +314,7 @@ enum PaymentType {
   DEBIT_CARD
   PAYPAL
   BANK_TRANSFER
+  STRIPE
 }
 
 enum NotificationType {
@@ -60,225 +327,35 @@ enum NotificationType {
   ORDER_DELIVERED
   MESSAGE_RECEIVED
   REVIEW_RECEIVED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  role      UserRole @default(USER)
-  verified  Boolean  @default(false)
-  avatar    String?
-  phone     String?
-  
-  // Address fields
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  products         Product[]
-  bids             Bid[]
-  ordersAsBuyer    Order[]   @relation("BuyerOrders")
-  ordersAsSeller   Order[]   @relation("SellerOrders")
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviews          Review[]
-  notifications    Notification[]
-  
-  // Auth-related
-  emailVerificationToken String?
-  emailVerificationExpires DateTime?
-  passwordResetToken     String?
-  passwordResetExpires   DateTime?
-  refreshTokens          RefreshToken[]
-  
-  @@map("users")
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  REFUND
+  AUCTION_HOLD
+  AUCTION_RELEASE
+  SELLER_PAYOUT
+  PLATFORM_FEE
+  ESCROW_HOLD
+  ESCROW_RELEASE
 }
 
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  
-  @@map("refresh_tokens")
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }
 
-model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  parentId    String?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relations
-  products Product[]
-  
-  @@map("categories")
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
 }
-
-model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  price       Decimal  @db.Decimal(10, 2)
-  imageUrls   String[]
-  status      ProductStatus @default(DRAFT)
-  condition   ProductCondition
-  
-  // Category
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  
-  // Owner
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  
-  // Auction fields
-  isAuction       Boolean   @default(false)
-  auctionEndDate  DateTime?
-  currentBid      Decimal?  @db.Decimal(10, 2)
-  minimumBid      Decimal?  @db.Decimal(10, 2)
-  buyNowPrice     Decimal?  @db.Decimal(10, 2)
-  
-  // Location
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  specifications ProductSpecification[]
-  bids           Bid[]
-  orders         Order[]
-  messages       Message[]
-  reviews        Review[]
-  
-  @@map("products")
-}
-
-model ProductSpecification {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String
-  value     String
-  unit      String?
-  
-  @@map("product_specifications")
-}
-
-model Bid {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  amount    Decimal  @db.Decimal(10, 2)
-  isWinning Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  @@map("bids")
-}
-
-model Order {
-  id       String      @id @default(cuid())
-  buyerId  String
-  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId String
-  seller   User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  productId String
-  product  Product     @relation(fields: [productId], references: [id])
-  status   OrderStatus @default(PENDING)
-  totalAmount Decimal  @db.Decimal(10, 2)
-  
-  // Shipping address
-  shippingStreet  String
-  shippingCity    String
-  shippingState   String
-  shippingZipCode String
-  shippingCountry String
-  
-  // Payment
-  paymentType     PaymentType?
-  paymentLast4    String?
-  paymentExpiryMonth Int?
-  paymentExpiryYear  Int?
-  paymentBrand    String?
-  
-  trackingNumber String?
-  notes         String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  reviews Review[]
-  
-  @@map("orders")
-}
-
-model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  content    String
-  isRead     Boolean  @default(false)
-  productId  String?
-  product    Product? @relation(fields: [productId], references: [id])
-  sentAt     DateTime @default(now())
-  
-  @@map("messages")
-}
-
-model Review {
-  id       String  @id @default(cuid())
-  rating   Int     @db.SmallInt
-  comment  String?
-  productId String
-  product  Product @relation(fields: [productId], references: [id])
-  authorId String
-  author   User    @relation(fields: [authorId], references: [id])
-  orderId  String?
-  order    Order?  @relation(fields: [orderId], references: [id])
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("reviews")
-}
-
-model Notification {
-  id      String           @id @default(cuid())
-  userId  String
-  user    User             @relation(fields: [userId], references: [id])
-  type    NotificationType
-  title   String
-  message String
-  isRead  Boolean          @default(false)
-  data    Json?
-  
-  createdAt DateTime @default(now())
-  
-  @@map("notifications")
-} 

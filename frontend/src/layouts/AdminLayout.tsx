@@ -1,17 +1,14 @@
 import { Outlet } from 'react-router-dom'
-import ProtectedRoute from '../components/ProtectedRoute'
 import Navbar from '../components/Navbar'
 
 export default function AdminLayout() {
   return (
-    <ProtectedRoute requireAdmin={true}>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-2xl font-bold mb-8">Admin Dashboard</h1>
-          <Outlet />
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold mb-8">Admin Dashboard</h1>
+        <Outlet />
       </div>
-    </ProtectedRoute>
+    </div>
   )
 } 

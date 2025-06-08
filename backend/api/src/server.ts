@@ -16,7 +16,8 @@ import orderRoutes from './routes/orderRoutes'
 import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
-import bidRoutes from "./routes/bidRoutes"
+import walletRoutes from './routes/walletRoutes'
+import bidRoutes from './routes/bidRoutes'
 import adminRoutes from "./routes/adminRoutes"
 // import { auctionScheduler } from './services/auctionScheduler'
 
@@ -69,6 +70,7 @@ app.use('/api/orders', orderRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/wallet', walletRoutes)
 app.use('/api/bids', bidRoutes)
 app.use('/api/admin', adminRoutes)
 

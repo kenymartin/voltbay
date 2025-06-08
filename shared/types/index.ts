@@ -12,6 +12,7 @@ export interface User {
   address?: Address;
   createdAt: Date;
   updatedAt: Date;
+  wallet?: Wallet;
 }
 
 export enum UserRole {
@@ -21,11 +22,23 @@ export enum UserRole {
 }
 
 export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  parentId?: string;
+  parent?: Category;
+  children?: Category[];
+  imageUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Product {
@@ -40,19 +53,21 @@ export interface Product {
   category?: Category;
   ownerId: string;
   owner?: User;
-  specifications?: ProductSpecification[];
   isAuction: boolean;
   auctionEndDate?: Date;
   currentBid?: number;
   minimumBid?: number;
   buyNowPrice?: number;
   location?: Address;
+  specifications?: ProductSpecification[];
   createdAt: Date;
   updatedAt: Date;
+  _count?: {
+    bids: number;
+  };
 }
 
 export enum ProductStatus {
-  PENDING = 'PENDING',
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   SOLD = 'SOLD',
@@ -69,21 +84,10 @@ export enum ProductCondition {
 }
 
 export interface ProductSpecification {
+  id: string;
   name: string;
   value: string;
   unit?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  parentId?: string;
-  parent?: Category;
-  children?: Category[];
-  imageUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Bid {
@@ -136,7 +140,70 @@ export enum PaymentType {
   CREDIT_CARD = 'CREDIT_CARD',
   DEBIT_CARD = 'DEBIT_CARD',
   PAYPAL = 'PAYPAL',
-  BANK_TRANSFER = 'BANK_TRANSFER'
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  WALLET = 'WALLET'
+}
+
+// Wallet-related types
+export interface Wallet {
+  id: string;
+  userId: string;
+  balance: number;
+  escrowBalance: number;
+  totalEarnings: number;
+  totalSpent: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PaymentCard {
+  id: string;
+  userId: string;
+  last4: string;
+  brand: string;
+  expiryMonth: number;
+  expiryYear: number;
+  holderName: string;
+  isDefault: boolean;
+  stripeCardId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WalletTransaction {
+  id: string;
+  userId: string;
+  user?: User;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number;
+  fee?: number;
+  description: string;
+  orderId?: string;
+  order?: Order;
+  paymentCardId?: string;
+  paymentCard?: PaymentCard;
+  externalRef?: string;
+  metadata?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAWAL = 'WITHDRAWAL',
+  PAYMENT = 'PAYMENT',
+  REFUND = 'REFUND',
+  ESCROW_HOLD = 'ESCROW_HOLD',
+  ESCROW_RELEASE = 'ESCROW_RELEASE',
+  FEE = 'FEE'
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface Message {
@@ -166,21 +233,47 @@ export interface Review {
   updatedAt: Date;
 }
 
-// API Response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  data?: any;
+  createdAt: Date;
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+export enum NotificationType {
+  BID_PLACED = 'BID_PLACED',
+  BID_OUTBID = 'BID_OUTBID',
+  AUCTION_WON = 'AUCTION_WON',
+  AUCTION_ENDED = 'AUCTION_ENDED',
+  ORDER_CONFIRMED = 'ORDER_CONFIRMED',
+  ORDER_SHIPPED = 'ORDER_SHIPPED',
+  ORDER_DELIVERED = 'ORDER_DELIVERED',
+  MESSAGE_RECEIVED = 'MESSAGE_RECEIVED',
+  REVIEW_RECEIVED = 'REVIEW_RECEIVED',
+  WALLET_FUNDED = 'WALLET_FUNDED',
+  WALLET_PAYMENT = 'WALLET_PAYMENT'
+}
+
+// API Response types
+export interface PaginatedResponse<T> {
+  items: T[];
   pagination: {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
   };
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
 // Authentication types
@@ -235,28 +328,4 @@ export enum ProductSortBy {
 export enum SortOrder {
   ASC = 'asc',
   DESC = 'desc'
-}
-
-// Notification types
-export interface Notification {
-  id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  isRead: boolean;
-  data?: Record<string, any>;
-  createdAt: Date;
-}
-
-export enum NotificationType {
-  BID_PLACED = 'BID_PLACED',
-  BID_OUTBID = 'BID_OUTBID',
-  AUCTION_WON = 'AUCTION_WON',
-  AUCTION_ENDED = 'AUCTION_ENDED',
-  ORDER_CONFIRMED = 'ORDER_CONFIRMED',
-  ORDER_SHIPPED = 'ORDER_SHIPPED',
-  ORDER_DELIVERED = 'ORDER_DELIVERED',
-  MESSAGE_RECEIVED = 'MESSAGE_RECEIVED',
-  REVIEW_RECEIVED = 'REVIEW_RECEIVED'
 } 
