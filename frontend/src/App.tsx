@@ -18,6 +18,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import DashboardPage from './pages/user/DashboardPage'
 import MessagesPage from './pages/user/MessagesPage'
+import MyProductsPage from './pages/user/MyProductsPage'
 import WalletPage from './pages/WalletPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -47,6 +48,7 @@ function App() {
         <Route path="/sell/edit/:id" element={<CreateProductPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/products/my" element={<MyProductsPage />} />
         <Route path="/wallet" element={<WalletPage />} />
       </Route>
 
