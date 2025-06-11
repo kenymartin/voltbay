@@ -197,8 +197,8 @@ export class ProductService {
 
     // Sorting
     const orderBy: any = {}
-    if (sortBy === 'endDate') {
-      orderBy.auctionEndDate = sortOrder
+    if (sortBy === 'endDate' || sortBy === 'endingSoon') {
+      orderBy.auctionEndDate = sortBy === 'endingSoon' ? 'asc' : sortOrder
     } else {
       orderBy[sortBy] = sortOrder
     }

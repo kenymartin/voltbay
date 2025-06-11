@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Wallet, WalletStats, WalletTransaction } from '../types/wallet'
+import { walletService } from '../services/walletService'
 import WalletService from '../services/walletService'
 import AddFundsModal from './AddFundsModal'
 import TransferFundsModal from './TransferFundsModal'
@@ -25,9 +26,9 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ className = '' }) => 
       setError(null)
 
       const [walletData, statsData, transactionsData] = await Promise.all([
-        WalletService.getWallet(),
-        WalletService.getWalletStats(),
-        WalletService.getTransactionHistory(1, 5)
+        walletService.getWallet(),
+        walletService.getWalletStats(),
+        walletService.getTransactionHistory(1, 5)
       ])
 
       setWallet(walletData)

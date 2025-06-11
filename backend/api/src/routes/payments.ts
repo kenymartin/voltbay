@@ -318,19 +318,19 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     // Handle the event
     switch (event.type) {
       case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object
+        const paymentIntent = event.data.object as { id: string }
         await PaymentService.confirmPayment(paymentIntent.id)
         console.log('Payment succeeded:', paymentIntent.id)
         break
 
       case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object
+        const failedPayment = event.data.object as { id: string }
         await PaymentService.handleFailedPayment(failedPayment.id)
         console.log('Payment failed:', failedPayment.id)
         break
 
       case 'payment_intent.canceled':
-        const canceledPayment = event.data.object
+        const canceledPayment = event.data.object as { id: string }
         await PaymentService.handleFailedPayment(canceledPayment.id)
         console.log('Payment canceled:', canceledPayment.id)
         break

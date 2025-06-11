@@ -1,5 +1,5 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js'
-import { apiService } from './apiService'
+import apiService from './api'
 
 export interface PaymentIntentData {
   productId: string

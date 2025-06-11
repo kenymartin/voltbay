@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Package, Gavel, ShoppingCart, User, Eye, Edit, Trash2, Clock, CheckCircle } from 'lucide-react'
+import { Plus, Package, Gavel, ShoppingCart, User, Eye, Edit, Trash2, Clock, CheckCircle, Wallet, TrendingUp, DollarSign } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../../store/authStore'
 import apiService from '../../services/api'
+import WalletDashboard from '../../components/WalletDashboard'
 import type { Product, Bid, Order, ApiResponse } from '../../../../shared/types'
 
-type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'profile'
+type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'wallet' | 'profile'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   
   // Data states
   const [products, setProducts] = useState<Product[]>([])
-  const [bids, setBids] = useState<Bid[]>([])
+  const [bids, _setBids] = useState<Bid[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -35,26 +36,44 @@ export default function DashboardPage() {
     setLoading(true)
     try {
       const [productsRes, ordersRes] = await Promise.all([
-        apiService.get('/api/products/user/my-products'),
-        apiService.get('/api/orders/')
+        apiService.get<ApiResponse<Product[]>>('/api/products/user/my-products'),
+        apiService.get<ApiResponse<Order[]>>('/api/orders/')
       ])
 
-      // Handle different response structures from backend
-      const userProducts = productsRes.data?.products || productsRes.data || []
-      const userOrders = ordersRes.data?.orders || ordersRes.data || []
+      // Handle different response structures from backend with proper fallbacks
+      const userProducts = Array.isArray(productsRes.data) 
+        ? productsRes.data 
+        : Array.isArray((productsRes.data as any)?.products) 
+        ? (productsRes.data as any).products 
+        : []
+        
+      const userOrders = Array.isArray(ordersRes.data) 
+        ? ordersRes.data 
+        : Array.isArray((ordersRes.data as any)?.orders) 
+        ? (ordersRes.data as any).orders 
+        : []
 
       setProducts(userProducts)
       setOrders(userOrders)
 
-      // Calculate stats
+      // Calculate stats with safe array methods
       setStats({
-        activeListings: userProducts.filter(p => p.status === 'ACTIVE').length,
-        totalSales: userOrders.filter(o => o.sellerId === user?.id && o.status === 'DELIVERED').length,
+        activeListings: userProducts.filter((p: Product) => p.status === 'ACTIVE').length,
+        totalSales: userOrders.filter((o: Order) => o.sellerId === user?.id && o.status === 'DELIVERED').length,
         activeBids: 0, // Will implement bids later
-        pendingOrders: userOrders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED').length
+        pendingOrders: userOrders.filter((o: Order) => o.status === 'PENDING' || o.status === 'CONFIRMED').length
       })
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
+      // Set empty arrays on error to prevent crashes
+      setProducts([])
+      setOrders([])
+      setStats({
+        activeListings: 0,
+        totalSales: 0,
+        activeBids: 0,
+        pendingOrders: 0
+      })
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
@@ -153,14 +172,14 @@ export default function DashboardPage() {
           
           <div className="flex space-x-2">
             <button
-              onClick={() => navigate(`/products/${product.id}`)}
+              onClick={() => navigate(`/product/${product.id}`)}
               className="flex-1 btn btn-outline btn-sm"
             >
               <Eye className="w-4 h-4 mr-1" />
               View
             </button>
             <button
-              onClick={() => navigate(`/dashboard/edit-product/${product.id}`)}
+              onClick={() => navigate(`/sell/edit/${product.id}`)}
               className="flex-1 btn btn-primary btn-sm"
             >
               <Edit className="w-4 h-4 mr-1" />
@@ -198,7 +217,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center text-sm text-gray-500">
         <span>Placed: {new Date(bid.createdAt).toLocaleDateString()}</span>
         <button
-          onClick={() => navigate(`/products/${bid.productId}`)}
+          onClick={() => navigate(`/product/${bid.productId}`)}
           className="text-blue-600 hover:text-blue-800"
         >
           View Product
@@ -243,6 +262,37 @@ export default function DashboardPage() {
 
   const OverviewTab = () => (
     <div className="space-y-6">
+      {/* Notifications/Alerts */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-blue-900">Welcome to VoltBay!</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              Your solar marketplace dashboard is ready. Start by creating your first listing or browsing available products.
+            </p>
+            <div className="mt-3 flex space-x-3">
+              <button
+                onClick={() => navigate('/sell')}
+                className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+              >
+                Create Listing
+              </button>
+              <button
+                onClick={() => navigate('/search')}
+                className="text-xs bg-white text-blue-600 px-3 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors"
+              >
+                Browse Products
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -271,51 +321,156 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Financial Summary */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Financial Summary</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">
+              ${Array.isArray(orders) ? orders
+                .filter(o => o.sellerId === user?.id && o.status === 'DELIVERED')
+                .reduce((sum, o) => sum + parseFloat(o.totalAmount.toString()), 0)
+                .toFixed(2) : '0.00'}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">Total Earnings</div>
+            <div className="text-xs text-gray-500 mt-1">From completed sales</div>
+          </div>
+          
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">
+              ${Array.isArray(orders) ? orders
+                .filter(o => o.buyerId === user?.id)
+                .reduce((sum, o) => sum + parseFloat(o.totalAmount.toString()), 0)
+                .toFixed(2) : '0.00'}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">Total Spent</div>
+            <div className="text-xs text-gray-500 mt-1">On purchases</div>
+          </div>
+          
+          <div className="text-center p-4 bg-purple-50 rounded-lg">
+            <div className="text-2xl font-bold text-purple-600">
+              ${Array.isArray(orders) ? orders
+                .filter(o => o.sellerId === user?.id && (o.status === 'PENDING' || o.status === 'CONFIRMED'))
+                .reduce((sum, o) => sum + parseFloat(o.totalAmount.toString()), 0)
+                .toFixed(2) : '0.00'}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">Pending Revenue</div>
+            <div className="text-xs text-gray-500 mt-1">From active orders</div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => navigate('/sell')}
-            className="btn btn-primary"
+            className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
           >
-            <Plus className="w-5 h-5 mr-2" />
-            Create New Listing
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
+                <Plus className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1">Create Listing</h3>
+              <p className="text-sm text-gray-600">Sell your solar equipment</p>
+            </div>
           </button>
+          
+          <button
+            onClick={() => navigate('/search')}
+            className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
+                <Package className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1">Browse Products</h3>
+              <p className="text-sm text-gray-600">Find solar equipment</p>
+            </div>
+          </button>
+          
           <button
             onClick={() => setActiveTab('bids')}
-            className="btn btn-outline"
+            className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
           >
-            <Gavel className="w-5 h-5 mr-2" />
-            View My Bids
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
+                <Gavel className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1">My Bids</h3>
+              <p className="text-sm text-gray-600">Track auction bids</p>
+            </div>
           </button>
+          
           <button
-            onClick={() => setActiveTab('orders')}
-            className="btn btn-outline"
+            onClick={() => navigate('/profile')}
+            className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all group"
           >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            View Orders
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
+                <User className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1">Edit Profile</h3>
+              <p className="text-sm text-gray-600">Update your information</p>
+            </div>
           </button>
         </div>
       </div>
 
       {/* Recent Activity */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Recent Activity</h2>
+          <button
+            onClick={() => setActiveTab('orders')}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            View All
+          </button>
+        </div>
         <div className="space-y-3">
-          {orders.slice(0, 3).map((order) => (
-            <div key={order.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-              <div>
-                <p className="font-medium">{order.product?.title}</p>
-                <p className="text-sm text-gray-600">
-                  {order.buyerId === user?.id ? 'Purchase' : 'Sale'} - {order.status}
+          {Array.isArray(orders) && orders.slice(0, 5).map((order) => (
+            <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center space-x-3">
+                <div className={`w-2 h-2 rounded-full ${
+                  order.status === 'DELIVERED' ? 'bg-green-500' :
+                  order.status === 'SHIPPED' ? 'bg-blue-500' :
+                  order.status === 'CONFIRMED' ? 'bg-purple-500' :
+                  order.status === 'PENDING' ? 'bg-yellow-500' :
+                  'bg-gray-500'
+                }`}></div>
+                <div>
+                  <p className="font-medium text-gray-900">{order.product?.title}</p>
+                  <p className="text-sm text-gray-600">
+                    {order.buyerId === user?.id ? 'Purchase' : 'Sale'} • {order.status.toLowerCase()}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-lg font-semibold text-gray-900">${order.totalAmount}</span>
+                <p className="text-xs text-gray-500">
+                  {order.buyerId === user?.id ? 'Purchased' : 'Earned'}
                 </p>
               </div>
-              <span className="text-green-600 font-semibold">${order.totalAmount}</span>
             </div>
           ))}
-          {orders.length === 0 && (
-            <p className="text-gray-500 text-center py-4">No recent activity</p>
+          {(!Array.isArray(orders) || orders.length === 0) && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 mb-2">No recent activity</p>
+              <p className="text-sm text-gray-400">Your transactions will appear here</p>
+            </div>
           )}
         </div>
       </div>
@@ -409,6 +564,60 @@ export default function DashboardPage() {
     </div>
   )
 
+  const WalletTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">My Wallet</h2>
+        <div className="flex space-x-2">
+          <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+            💳 Secure Payments
+          </span>
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+            ⚡ Instant Transactions
+          </span>
+        </div>
+      </div>
+
+      <WalletDashboard />
+
+      {/* Wallet Benefits */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 mb-3">Wallet Benefits</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-900">Instant Payments</h4>
+              <p className="text-sm text-blue-700">Pay for auctions and purchases instantly with your wallet balance.</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-900">Secure Escrow</h4>
+              <p className="text-sm text-blue-700">Your funds are protected during transactions with built-in escrow.</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-medium text-blue-900">Lower Fees</h4>
+              <p className="text-sm text-blue-700">Reduced transaction fees when using wallet funds vs. credit cards.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   const ProfileTab = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Profile Settings</h2>
@@ -478,7 +687,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-6">
-          <button className="btn btn-primary">
+          <button 
+            onClick={() => navigate('/profile')}
+            className="btn btn-primary"
+          >
             Edit Profile
           </button>
         </div>
@@ -491,6 +703,7 @@ export default function DashboardPage() {
     { id: 'listings', label: 'My Listings', icon: Package },
     { id: 'bids', label: 'My Bids', icon: Gavel },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
+    { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'profile', label: 'Profile', icon: User },
   ]
 
@@ -545,6 +758,7 @@ export default function DashboardPage() {
       {activeTab === 'listings' && <ListingsTab />}
       {activeTab === 'bids' && <BidsTab />}
       {activeTab === 'orders' && <OrdersTab />}
+      {activeTab === 'wallet' && <WalletTab />}
       {activeTab === 'profile' && <ProfileTab />}
     </div>
   )

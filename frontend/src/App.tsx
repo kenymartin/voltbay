@@ -12,12 +12,14 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import SearchPage from './pages/SearchPage'
 import AuctionsPage from './pages/AuctionsPage'
 import ProductsPage from './pages/ProductsPage'
+import CategoriesPage from './pages/CategoriesPage'
 import ProfilePage from './pages/ProfilePage'
 import CreateProductPage from './pages/CreateProductPage'
 import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
 import DashboardPage from './pages/user/DashboardPage'
 import MessagesPage from './pages/user/MessagesPage'
+import MyProductsPage from './pages/user/MyProductsPage'
 import WalletPage from './pages/WalletPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -33,6 +35,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/auctions" element={<AuctionsPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchPage />} />
@@ -47,6 +50,7 @@ function App() {
         <Route path="/sell/edit/:id" element={<CreateProductPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/products/my" element={<MyProductsPage />} />
         <Route path="/wallet" element={<WalletPage />} />
       </Route>
 

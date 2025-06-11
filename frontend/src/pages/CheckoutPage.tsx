@@ -422,7 +422,7 @@ export default function CheckoutPage() {
                 {items.map((item) => (
                   <div key={item.productId} className="flex items-center space-x-3">
                     <img
-                      src={item.product.imageUrls?.[0] || '/placeholder-product.jpg'}
+                      src={item.product.imageUrls?.[0] || 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=100&h=100&fit=crop'}
                       alt={item.product.title}
                       className="w-12 h-12 object-cover rounded"
                     />

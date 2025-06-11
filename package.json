@@ -1,0 +1,35 @@
+{
+  "name": "voltbay",
+  "version": "1.0.0",
+  "description": "Solar marketplace platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:auth\" \"npm run dev:api\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:api": "cd backend/api && npm run dev",
+    "dev:auth": "cd backend/auth && npm run dev",
+    "start": "npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:all": "concurrently \"cd frontend && npm run build\" \"cd backend/api && npm run build\" \"cd backend/auth && npm run build\"",
+    "setup": "npm run install:all && npm run db:setup",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend/api && npm install && cd ../auth && npm install",
+    "db:setup": "cd backend/api && npx prisma generate && npx prisma migrate dev",
+    "db:reset": "cd backend/api && npx prisma migrate reset",
+    "ports:check": "lsof -i :3000,3001,3002,3003,4000,5001,5432 || echo 'Checking available ports...'",
+    "ports:kill": "pkill -f 'vite|node.*3000|node.*4000|node.*5001' || echo 'No processes killed'",
+    "clean:start": "npm run ports:kill && sleep 2 && npm run dev"
+  },
+  "keywords": [
+    "solar",
+    "marketplace",
+    "voltbay"
+  ],
+  "author": "VoltBay Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
