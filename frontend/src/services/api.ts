@@ -1,10 +1,33 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
+import { clearAllAuthState } from '../utils/clearAuthState'
+
+// Extend config types for custom properties
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _skipAuthInterceptor?: boolean
+  _retry?: boolean
+  metadata?: { _skipAuthInterceptor?: boolean }
+}
+
+// Vite env type declaration
+declare global {
+  interface ImportMeta {
+    env: {
+      VITE_API_URL?: string
+      VITE_AUTH_URL?: string
+    }
+  }
+}
 
 class ApiService {
   private api: AxiosInstance
   private authApi: AxiosInstance
+  private isRefreshing = false
+  private refreshSubscribers: Array<(token: string) => void> = []
+  private refreshAttempts = 0
+  private maxRefreshAttempts = 3
+  private lastRefreshAttempt = 0
 
   constructor() {
     // Main API instance
@@ -30,9 +53,40 @@ class ApiService {
     this.setupInterceptors()
   }
 
+  private onRefreshTokenSuccess(token: string) {
+    this.refreshSubscribers.forEach(callback => callback(token))
+    this.refreshSubscribers = []
+    // Reset refresh attempts on success
+    this.refreshAttempts = 0
+  }
+
+  private onRefreshTokenFailure() {
+    console.log('🔧 Refresh token failure, clearing all auth state')
+    this.refreshSubscribers = []
+    this.refreshAttempts++
+    
+    // If we've tried too many times, clear everything and force reload
+    if (this.refreshAttempts >= this.maxRefreshAttempts) {
+      console.error('🔧 Too many refresh attempts, forcing app restart')
+      clearAllAuthState()
+      window.location.replace(window.location.origin + '/login')
+      return
+    }
+    
+    useAuthStore.getState().logout()
+    // Avoid infinite redirects
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login'
+    }
+  }
+
+  private addRefreshSubscriber(callback: (token: string) => void) {
+    this.refreshSubscribers.push(callback)
+  }
+
   private setupInterceptors() {
     // Request interceptor to add auth token
-    const requestInterceptor = (config: AxiosRequestConfig) => {
+    const requestInterceptor = (config: InternalAxiosRequestConfig) => {
       const { accessToken } = useAuthStore.getState()
       if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`
@@ -44,69 +98,88 @@ class ApiService {
     const responseInterceptor = (response: AxiosResponse) => response
 
     const errorInterceptor = async (error: any) => {
-      const originalRequest = error.config
+      const originalRequest: CustomAxiosRequestConfig = error.config
 
+      // Handle 401 errors
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true
 
-        // Don't retry if this was already a refresh token request to prevent infinite loops
+        // Circuit breaker: if too many attempts recently, bail out
+        const now = Date.now()
+        if (now - this.lastRefreshAttempt < 1000 && this.refreshAttempts >= this.maxRefreshAttempts) {
+          console.error('🔧 Circuit breaker: too many refresh attempts')
+          this.onRefreshTokenFailure()
+          return Promise.reject(error)
+        }
+        this.lastRefreshAttempt = now
+
+        // Don't retry if this was already a refresh token request
         if (originalRequest.url?.includes('/refresh-token')) {
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
+          this.onRefreshTokenFailure()
           return Promise.reject(error)
         }
 
-        // Don't try to refresh tokens for authentication endpoints (login, register, etc.)
+        // Don't try to refresh tokens for authentication endpoints
         const authEndpoints = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
         const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))
         
         if (isAuthEndpoint) {
-          // For auth endpoints, just pass through the error without trying to refresh
           return Promise.reject(error)
         }
 
-        try {
-          // Try to refresh token - this should automatically include cookies
-          const refreshResponse = await this.authApi.post('/api/auth/refresh-token', {}, {
-            _skipAuthInterceptor: true // Custom flag to skip auth interceptor for this request
+        // If already refreshing, wait for the result
+        if (this.isRefreshing) {
+          return new Promise((resolve) => {
+            this.addRefreshSubscriber((token: string) => {
+              originalRequest.headers!.Authorization = `Bearer ${token}`
+              resolve(axios(originalRequest))
+            })
           })
+        }
+
+        this.isRefreshing = true
+
+        try {
+          console.log('🔧 Attempting token refresh...')
+          const refreshResponse = await this.authApi.post('/api/auth/refresh-token', {})
           
           const { accessToken } = refreshResponse.data.data
           
           useAuthStore.getState().updateToken(accessToken)
+          this.isRefreshing = false
+          this.onRefreshTokenSuccess(accessToken)
           
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
+          originalRequest.headers!.Authorization = `Bearer ${accessToken}`
           return axios(originalRequest)
         } catch (refreshError) {
-          // Refresh failed, logout user
-          console.error('Token refresh failed:', refreshError)
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
+          console.error('🔧 Token refresh failed:', refreshError)
+          this.isRefreshing = false
+          this.onRefreshTokenFailure()
           return Promise.reject(refreshError)
         }
       }
 
-      // Handle other errors
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message)
-      } else if (error.message) {
-        toast.error(error.message)
-      } else {
-        toast.error('An unexpected error occurred')
+      // Handle other errors without showing toast for auth failures
+      if (error.response?.status !== 401) {
+        if (error.response?.data?.message) {
+          toast.error(error.response.data.message)
+        } else if (error.message && !error.message.includes('refresh')) {
+          toast.error('An unexpected error occurred')
+        }
       }
 
       return Promise.reject(error)
     }
 
-    // Apply interceptors to both instances
+    // Apply interceptors to main API
     this.api.interceptors.request.use(requestInterceptor)
     this.api.interceptors.response.use(responseInterceptor, errorInterceptor)
     
-    // For auth API, we need different interceptors to handle refresh token properly
-    this.authApi.interceptors.request.use((config: AxiosRequestConfig) => {
-      // Don't add auth header to refresh token requests, but add it to others
-      if (!config.url?.includes('/refresh-token') && !config._skipAuthInterceptor) {
+    // For auth API, simpler interceptors
+    this.authApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      // Don't add auth header to refresh token requests
+      if (!config.url?.includes('/refresh-token')) {
         const { accessToken } = useAuthStore.getState()
         if (accessToken && config.headers) {
           config.headers.Authorization = `Bearer ${accessToken}`
@@ -114,7 +187,15 @@ class ApiService {
       }
       return config
     })
-    this.authApi.interceptors.response.use(responseInterceptor, errorInterceptor)
+    
+    // Simpler error handler for auth API to avoid double handling
+    this.authApi.interceptors.response.use(
+      responseInterceptor, 
+      (error) => {
+        // Don't show error toasts for auth API failures
+        return Promise.reject(error)
+      }
+    )
   }
 
   // Generic request methods

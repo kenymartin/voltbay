@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { WalletTransaction, TransactionType, TransactionStatus } from '../types/wallet'
-import WalletService, { TransactionHistoryResponse } from '../services/walletService'
+import { walletService, TransactionHistoryResponse } from '../services/walletService'
+import WalletService from '../services/walletService'
 
 interface TransactionHistoryProps {
   onClose: () => void
@@ -20,7 +21,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ onClose }) => {
       setLoading(true)
       setError(null)
       
-      const response: TransactionHistoryResponse = await WalletService.getTransactionHistory(page, 20)
+      const response: TransactionHistoryResponse = await walletService.getTransactionHistory(page, 20)
       
       let filteredTransactions = response.transactions
       

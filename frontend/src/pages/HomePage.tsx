@@ -7,25 +7,25 @@ export default function HomePage() {
     {
       name: 'Solar Panels',
       description: 'High-efficiency photovoltaic panels',
-      image: '/api/placeholder/300/200',
+      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=300&h=200&fit=crop',
       count: '1,234 products'
     },
     {
       name: 'Inverters',
       description: 'Power conversion systems',
-      image: '/api/placeholder/300/200',
+      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=300&h=200&fit=crop',
       count: '567 products'
     },
     {
       name: 'Batteries',
       description: 'Energy storage solutions',
-      image: '/api/placeholder/300/200',
+      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=300&h=200&fit=crop',
       count: '890 products'
     },
     {
       name: 'Mounting Systems',
       description: 'Installation hardware',
-      image: '/api/placeholder/300/200',
+      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=300&h=200&fit=crop',
       count: '345 products'
     }
   ]
@@ -36,7 +36,7 @@ export default function HomePage() {
       title: 'High-Efficiency 400W Solar Panel',
       price: 299.99,
       originalPrice: 349.99,
-      image: '/api/placeholder/250/200',
+      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=250&h=200&fit=crop',
       rating: 4.8,
       reviews: 124,
       seller: 'SolarTech Pro',
@@ -46,7 +46,7 @@ export default function HomePage() {
       id: '2',
       title: '5kW String Inverter - Premium Grade',
       price: 1299.99,
-      image: '/api/placeholder/250/200',
+      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=250&h=200&fit=crop',
       rating: 4.9,
       reviews: 89,
       seller: 'PowerSolutions',
@@ -57,7 +57,7 @@ export default function HomePage() {
       id: '3',
       title: 'Tesla Powerwall 2 - Like New',
       price: 8999.99,
-      image: '/api/placeholder/250/200',
+      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=250&h=200&fit=crop',
       rating: 5.0,
       reviews: 45,
       seller: 'EnergyHub',
@@ -68,7 +68,7 @@ export default function HomePage() {
       title: 'Complete Solar Kit 10kW System',
       price: 12999.99,
       originalPrice: 15999.99,
-      image: '/api/placeholder/250/200',
+      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=250&h=200&fit=crop',
       rating: 4.7,
       reviews: 67,
       seller: 'SolarComplete',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { walletService } from '../services/walletService'
 import WalletService from '../services/walletService'
 
 interface AddFundsModalProps {
@@ -51,7 +52,7 @@ const AddFundsModal: React.FC<AddFundsModalProps> = ({ onClose, onSuccess }) => 
     setStep('processing')
 
     try {
-      await WalletService.addFunds({
+      await walletService.addFunds({
         amount: parseFloat(amount),
         paymentMethodId: paymentMethod,
         description: description || 'Wallet top-up'

@@ -39,7 +39,7 @@ export const searchProductsSchema = z.object({
   maxPrice: z.string().transform(val => parseFloat(val)).optional(),
   isAuction: z.string().transform(val => val === 'true').optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'SOLD', 'EXPIRED', 'SUSPENDED']).optional(),
-  sortBy: z.enum(['price', 'createdAt', 'title', 'endDate']).optional().default('createdAt'),
+  sortBy: z.enum(['price', 'createdAt', 'title', 'endDate', 'endingSoon']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.string().transform(val => parseInt(val, 10)).optional().default('1'),
   limit: z.string().transform(val => parseInt(val, 10)).optional().default('20'),

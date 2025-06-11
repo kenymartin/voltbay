@@ -8,6 +8,9 @@ import App from './App.tsx'
 import './index.css'
 import 'react-toastify/dist/ReactToastify.css'
 
+// Import debug utilities for development
+import './utils/debug'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

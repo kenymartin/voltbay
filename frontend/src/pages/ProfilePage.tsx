@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { User, Edit, Save, X, Camera, Mail, Phone, MapPin } from 'lucide-react'
+import { User, Edit, Save, X, Camera, Mail, Phone, MapPin, ArrowLeft } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
 import type { User as UserType, ApiResponse } from '../../../shared/types'
 
 export default function ProfilePage() {
-  const { user: authUser, updateUser } = useAuthStore()
+  const { user: authUser, setUser } = useAuthStore()
   const navigate = useNavigate()
   
-  const [user, setUser] = useState<UserType | null>(authUser)
+  const [user, setUserState] = useState<UserType | null>(authUser)
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -20,11 +20,11 @@ export default function ProfilePage() {
     firstName: authUser?.firstName || '',
     lastName: authUser?.lastName || '',
     phone: authUser?.phone || '',
-    street: authUser?.street || '',
-    city: authUser?.city || '',
-    state: authUser?.state || '',
-    zipCode: authUser?.zipCode || '',
-    country: authUser?.country || ''
+    street: authUser?.address?.street || '',
+    city: authUser?.address?.city || '',
+    state: authUser?.address?.state || '',
+    zipCode: authUser?.address?.zipCode || '',
+    country: authUser?.address?.country || ''
   })
 
   useEffect(() => {
@@ -40,16 +40,18 @@ export default function ProfilePage() {
     try {
       const response = await apiService.authGet<ApiResponse<{ user: UserType }>>('/api/auth/profile')
       if (response.success && response.data) {
-        setUser(response.data.user)
+        setUserState(response.data.user)
+        // Backend returns address fields directly on user, not nested in address object
+        const userData = response.data.user as any
         setEditForm({
-          firstName: response.data.user.firstName || '',
-          lastName: response.data.user.lastName || '',
-          phone: response.data.user.phone || '',
-          street: response.data.user.street || '',
-          city: response.data.user.city || '',
-          state: response.data.user.state || '',
-          zipCode: response.data.user.zipCode || '',
-          country: response.data.user.country || ''
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          phone: userData.phone || '',
+          street: userData.street || '',
+          city: userData.city || '',
+          state: userData.state || '',
+          zipCode: userData.zipCode || '',
+          country: userData.country || ''
         })
       }
     } catch (error) {
@@ -68,32 +70,46 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      console.log('🔧 DEBUG: Starting profile update with data:', editForm)
+      
       const response = await apiService.authPut<ApiResponse<{ user: UserType }>>('/api/auth/profile', editForm)
       
+      console.log('🔧 DEBUG: Profile update response:', response)
+      
       if (response.success && response.data) {
+        setUserState(response.data.user)
         setUser(response.data.user)
-        updateUser(response.data.user)
         setIsEditing(false)
         toast.success('Profile updated successfully!')
+        console.log('✅ DEBUG: Profile update successful')
+      } else {
+        console.error('❌ DEBUG: Response success was false or no data:', response)
+        toast.error('Update failed: Invalid response from server')
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update profile')
-      console.error('Profile update error:', error)
+      console.error('❌ DEBUG: Profile update error:', error)
+      console.error('❌ DEBUG: Error response:', error.response)
+      console.error('❌ DEBUG: Error data:', error.response?.data)
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update profile'
+      toast.error(errorMessage)
     } finally {
       setSaving(false)
     }
   }
 
   const handleCancel = () => {
+    // Backend returns address fields directly on user, not nested in address object
+    const userData = user as any
     setEditForm({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      phone: user?.phone || '',
-      street: user?.street || '',
-      city: user?.city || '',
-      state: user?.state || '',
-      zipCode: user?.zipCode || '',
-      country: user?.country || ''
+      firstName: userData?.firstName || '',
+      lastName: userData?.lastName || '',
+      phone: userData?.phone || '',
+      street: userData?.street || '',
+      city: userData?.city || '',
+      state: userData?.state || '',
+      zipCode: userData?.zipCode || '',
+      country: userData?.country || ''
     })
     setIsEditing(false)
   }
@@ -159,6 +175,13 @@ export default function ProfilePage() {
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-white hover:text-gray-200 transition-colors"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <h1 className="text-2xl font-bold text-white">My Profile</h1>
             </div>
             {!isEditing ? (
@@ -315,7 +338,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     name="street"
-                    value={isEditing ? editForm.street : user.street || ''}
+                    value={isEditing ? editForm.street : (user as any).street || ''}
                     onChange={handleInputChange}
                     readOnly={!isEditing}
                     className={`w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
@@ -332,7 +355,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     name="city"
-                    value={isEditing ? editForm.city : user.city || ''}
+                    value={isEditing ? editForm.city : (user as any).city || ''}
                     onChange={handleInputChange}
                     readOnly={!isEditing}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
@@ -347,7 +370,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     name="state"
-                    value={isEditing ? editForm.state : user.state || ''}
+                    value={isEditing ? editForm.state : (user as any).state || ''}
                     onChange={handleInputChange}
                     readOnly={!isEditing}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
@@ -364,7 +387,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     name="zipCode"
-                    value={isEditing ? editForm.zipCode : user.zipCode || ''}
+                    value={isEditing ? editForm.zipCode : (user as any).zipCode || ''}
                     onChange={handleInputChange}
                     readOnly={!isEditing}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
@@ -379,7 +402,7 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     name="country"
-                    value={isEditing ? editForm.country : user.country || ''}
+                    value={isEditing ? editForm.country : (user as any).country || ''}
                     onChange={handleInputChange}
                     readOnly={!isEditing}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
@@ -397,17 +420,40 @@ export default function ProfilePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Statistics</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-primary-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-primary-600">0</div>
+                <div className="text-2xl font-bold text-primary-600">-</div>
                 <div className="text-sm text-gray-600">Products Listed</div>
+                <div className="text-xs text-gray-500 mt-1">All time</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">0</div>
+                <div className="text-2xl font-bold text-green-600">-</div>
                 <div className="text-sm text-gray-600">Successful Sales</div>
+                <div className="text-xs text-gray-500 mt-1">Completed orders</div>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">0</div>
+                <div className="text-2xl font-bold text-blue-600">-</div>
                 <div className="text-sm text-gray-600">Purchases Made</div>
+                <div className="text-xs text-gray-500 mt-1">Total orders</div>
               </div>
+            </div>
+            
+            {/* Additional Stats Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">-</div>
+                <div className="text-sm text-gray-600">Auction Bids</div>
+                <div className="text-xs text-gray-500 mt-1">Total bids placed</div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">-</div>
+                <div className="text-sm text-gray-600">Reviews Given</div>
+                <div className="text-xs text-gray-500 mt-1">Product reviews</div>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-600 text-center">
+                📊 Detailed statistics will be loaded from your dashboard
+              </p>
             </div>
           </div>
         </div>

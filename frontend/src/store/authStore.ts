@@ -15,6 +15,7 @@ interface AuthActions {
   setUser: (user: User) => void
   setLoading: (loading: boolean) => void
   updateToken: (token: string) => void
+  clearAllData: () => void
 }
 
 type AuthStore = AuthState & AuthActions
@@ -57,6 +58,19 @@ export const useAuthStore = create<AuthStore>()(
 
       updateToken: (token: string) => {
         set({ accessToken: token })
+      },
+
+      clearAllData: () => {
+        // Clear all auth data and localStorage
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+          isLoading: false,
+        })
+        // Also clear any related localStorage items
+        localStorage.removeItem('voltbay-auth')
+        sessionStorage.clear()
       },
     }),
     {

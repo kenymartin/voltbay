@@ -1,3 +1,23 @@
+export enum TransactionType {
+  DEPOSIT = 'DEPOSIT',
+  WITHDRAWAL = 'WITHDRAWAL',
+  PURCHASE = 'PURCHASE',
+  REFUND = 'REFUND',
+  AUCTION_HOLD = 'AUCTION_HOLD',
+  AUCTION_RELEASE = 'AUCTION_RELEASE',
+  SELLER_PAYOUT = 'SELLER_PAYOUT',
+  PLATFORM_FEE = 'PLATFORM_FEE',
+  ESCROW_HOLD = 'ESCROW_HOLD',
+  ESCROW_RELEASE = 'ESCROW_RELEASE'
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
+}
+
 export interface Wallet {
   id: string
   balance: number
@@ -30,50 +50,14 @@ export interface WalletStats {
 export interface Escrow {
   id: string
   orderId: string
+  buyerWalletId: string
+  sellerId: string
   amount: number
   status: TransactionStatus
   reason?: string
-  createdAt: string
   releasedAt?: string
-  userRole: 'buyer' | 'seller'
-  order?: {
-    id: string
-    status: string
-    product: {
-      id: string
-      title: string
-    }
-    buyer: {
-      id: string
-      email: string
-      name: string
-    }
-    seller: {
-      id: string
-      email: string
-      name: string
-    }
-  }
-}
-
-export enum TransactionType {
-  DEPOSIT = 'DEPOSIT',
-  WITHDRAWAL = 'WITHDRAWAL',
-  PURCHASE = 'PURCHASE',
-  REFUND = 'REFUND',
-  AUCTION_HOLD = 'AUCTION_HOLD',
-  AUCTION_RELEASE = 'AUCTION_RELEASE',
-  SELLER_PAYOUT = 'SELLER_PAYOUT',
-  PLATFORM_FEE = 'PLATFORM_FEE',
-  ESCROW_HOLD = 'ESCROW_HOLD',
-  ESCROW_RELEASE = 'ESCROW_RELEASE'
-}
-
-export enum TransactionStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AddFundsData {

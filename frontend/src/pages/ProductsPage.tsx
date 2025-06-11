@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ShoppingCart, Search, Filter, Grid, List, Star, MapPin, User } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductCondition, ProductSortBy, SortOrder, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import { ProductSortBy, SortOrder } from '../../../shared/types'
 import SEO from '../components/SEO'
 import AddToCartButton from '../components/AddToCartButton'
 
@@ -85,10 +86,10 @@ export default function ProductsPage() {
         }
       }
 
-      const response = await apiService.get<PaginatedResponse<Product>>(`/api/products/search?${searchParams.toString()}`)
-      setProducts(response.data || [])
-      setTotalPages(response.pagination?.totalPages || 1)
-      setTotalResults(response.pagination?.total || 0)
+      const response = await apiService.get<{ success: boolean; data: { products: Product[]; pagination: any } }>(`/api/products/search?${searchParams.toString()}`)
+      setProducts(response.data?.products || [])
+      setTotalPages(response.data?.pagination?.pages || 1)
+      setTotalResults(response.data?.pagination?.total || 0)
     } catch (error) {
       console.error('Failed to search products:', error)
       setProducts([])

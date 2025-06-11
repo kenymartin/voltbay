@@ -190,8 +190,8 @@ export class AuthService {
     const newAccessToken = this.generateAccessToken(tokenRecord.user.id)
     const newRefreshToken = await this.generateRefreshToken(tokenRecord.user.id)
 
-    // Remove old refresh token
-    await prisma.refreshToken.delete({
+    // Remove old refresh token - use deleteMany to avoid error if token doesn't exist
+    await prisma.refreshToken.deleteMany({
       where: { token: refreshToken }
     })
 

@@ -7,6 +7,7 @@ const productController = new ProductController()
 
 // Public routes
 router.get('/', productController.getProducts)
+router.get('/search', productController.getProducts)
 router.get('/featured', productController.getFeaturedProducts)
 router.get('/auctions', productController.getAuctionProducts)
 router.get('/:id', productController.getProduct)

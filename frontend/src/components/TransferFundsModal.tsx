@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { walletService } from '../services/walletService'
 import WalletService from '../services/walletService'
 
 interface TransferFundsModalProps {
@@ -57,7 +58,7 @@ const TransferFundsModal: React.FC<TransferFundsModalProps> = ({
       // In real implementation, you'd need to find user by email first
       const mockUserId = 'mock-user-id'
       
-      await WalletService.transferFunds({
+      await walletService.transferFunds({
         toUserId: mockUserId,
         amount: parseFloat(amount),
         description: description
