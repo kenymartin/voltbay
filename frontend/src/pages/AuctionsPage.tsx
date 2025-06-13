@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Clock, Gavel, Eye, Search, Filter, Star, Calendar, TrendingUp } from 'lucide-react'
+import { Clock, Gavel, Eye, Search, Filter, Star, Calendar, TrendingUp, X, User, DollarSign, CheckCircle } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse } from '../../../shared/types'
+import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse, Bid } from '../../../shared/types'
 import { ProductSortBy, SortOrder } from '../../../shared/types'
 import SEO from '../components/SEO'
 
@@ -109,6 +109,13 @@ export default function AuctionsPage() {
 
   const AuctionCard = ({ auction }: { auction: Product }) => {
     const [timeLeft, setTimeLeft] = useState('')
+    const [showResultModal, setShowResultModal] = useState(false)
+    const [auctionResult, setAuctionResult] = useState<{
+      winner: { firstName: string; lastName: string } | null;
+      finalBid: number;
+      totalBids: number;
+      bids: Bid[];
+    } | null>(null)
     const isActive = auction.auctionEndDate && new Date(auction.auctionEndDate) > new Date()
     
     useEffect(() => {
@@ -141,97 +148,205 @@ export default function AuctionsPage() {
       return () => clearInterval(timer)
     }, [auction.auctionEndDate])
     
+    const handleViewResult = async () => {
+      try {
+        const response = await apiService.get<ApiResponse<{
+          winner: { firstName: string; lastName: string } | null;
+          finalBid: number;
+          totalBids: number;
+          bids: Bid[];
+        }>>(`/api/products/${auction.id}/auction-result`)
+        
+        if (response.success && response.data) {
+          setAuctionResult(response.data)
+          setShowResultModal(true)
+        }
+      } catch (error) {
+        console.error('Failed to fetch auction result:', error)
+      }
+    }
+
     return (
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-        <div className="relative">
-          <div className="aspect-square bg-gray-200 overflow-hidden">
-            {auction.imageUrls && auction.imageUrls.length > 0 ? (
-              <img
-                src={auction.imageUrls[0]}
-                alt={auction.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="text-gray-500">No image</span>
+      <>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          <div className="relative">
+            <div className="aspect-square bg-gray-200 overflow-hidden">
+              {auction.imageUrls && auction.imageUrls.length > 0 ? (
+                <img
+                  src={auction.imageUrls[0]}
+                  alt={auction.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-gray-500">No image</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Auction Status Badge */}
+            <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-sm font-medium ${
+              isActive 
+                ? 'bg-red-500 text-white' 
+                : 'bg-gray-500 text-white'
+            }`}>
+              <Clock className="w-4 h-4 inline mr-1" />
+              {timeLeft || 'Calculating...'}
+            </div>
+
+            {/* Buy Now Badge */}
+            {auction.buyNowPrice && (
+              <div className="absolute top-3 right-3 bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium">
+                Buy Now Available
               </div>
             )}
           </div>
           
-          {/* Auction Status Badge */}
-          <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-sm font-medium ${
-            isActive 
-              ? 'bg-red-500 text-white' 
-              : 'bg-gray-500 text-white'
-          }`}>
-            <Clock className="w-4 h-4 inline mr-1" />
-            {timeLeft || 'Calculating...'}
-          </div>
-
-          {/* Buy Now Badge */}
-          {auction.buyNowPrice && (
-            <div className="absolute top-3 right-3 bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium">
-              Buy Now Available
+          <div className="p-5">
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2">{auction.title}</h3>
+            <p className="text-sm text-gray-600 mb-3">{auction.category?.name}</p>
+            
+            {/* Current Bid */}
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Current Bid:</span>
+                <span className="text-xl font-bold text-green-600">
+                  ${auction.currentBid || auction.minimumBid || 0}
+                </span>
+              </div>
+              
+              {auction.buyNowPrice && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Buy Now:</span>
+                  <span className="text-lg font-semibold text-blue-600">
+                    ${auction.buyNowPrice}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        
-        <div className="p-5">
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{auction.title}</h3>
-          <p className="text-sm text-gray-600 mb-3">{auction.category?.name}</p>
-          
-          {/* Current Bid */}
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Current Bid:</span>
-              <span className="text-xl font-bold text-green-600">
-                ${auction.currentBid || auction.minimumBid || 0}
+
+            {/* Condition */}
+            <div className="flex items-center justify-between mb-4">
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                {auction.condition.replace('_', ' ')}
+              </span>
+              <span className={`text-sm font-medium ${
+                isActive ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {isActive ? 'Active' : 'Ended'}
               </span>
             </div>
             
-            {auction.buyNowPrice && (
+            {/* Action Buttons */}
+            <div className="p-5 pt-0">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Buy Now:</span>
-                <span className="text-lg font-semibold text-blue-600">
-                  ${auction.buyNowPrice}
-                </span>
+                <button
+                  onClick={() => {
+                    console.log('Navigating to product:', auction.id)
+                    navigate(`/product/${auction.id}`)
+                  }}
+                  className="btn btn-primary flex-1 mr-2"
+                >
+                  View Details
+                </button>
+                {!isActive && (
+                  <button
+                    onClick={handleViewResult}
+                    className="btn btn-secondary flex-1"
+                  >
+                    View Result
+                  </button>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Condition */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-              {auction.condition.replace('_', ' ')}
-            </span>
-            <span className={`text-sm font-medium ${
-              isActive ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {isActive ? 'Active' : 'Ended'}
-            </span>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="space-y-2">
-            <button
-              onClick={() => navigate(`/products/${auction.id}`)}
-              className="w-full btn btn-primary"
-            >
-              <Gavel className="w-4 h-4 mr-2" />
-              {isActive ? 'Place Bid' : 'View Results'}
-            </button>
-            
-            {isActive && auction.buyNowPrice && (
-              <button
-                onClick={() => navigate(`/products/${auction.id}`)}
-                className="w-full btn btn-outline"
-              >
-                Buy Now - ${auction.buyNowPrice}
-              </button>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Auction Result Modal */}
+        {showResultModal && auctionResult && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Auction Result</h3>
+                  <button
+                    onClick={() => setShowResultModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Winner Section */}
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="w-8 h-8 text-green-500" />
+                      <div>
+                        <h4 className="font-semibold text-green-800">Winner</h4>
+                        {auctionResult.winner ? (
+                          <p className="text-green-700">
+                            {auctionResult.winner.firstName} {auctionResult.winner.lastName}
+                          </p>
+                        ) : (
+                          <p className="text-green-700">No winner (reserve not met)</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Final Bid */}
+                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="w-5 h-5 text-gray-600" />
+                      <span className="text-gray-700">Final Bid</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
+                      ${auctionResult.finalBid.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Total Bids */}
+                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Gavel className="w-5 h-5 text-gray-600" />
+                      <span className="text-gray-700">Total Bids</span>
+                    </div>
+                    <span className="text-xl font-semibold text-gray-900">
+                      {auctionResult.totalBids}
+                    </span>
+                  </div>
+
+                  {/* Bid History */}
+                  {auctionResult.bids.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Bid History</h4>
+                      <div className="space-y-2">
+                        {auctionResult.bids.map((bid, index) => (
+                          <div key={bid.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-gray-600" />
+                              <span className="text-gray-700">
+                                {bid.bidder.firstName} {bid.bidder.lastName}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <DollarSign className="w-4 h-4 text-gray-600" />
+                              <span className="font-medium text-gray-900">
+                                ${bid.amount.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     )
   }
 

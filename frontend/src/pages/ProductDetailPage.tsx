@@ -53,8 +53,8 @@ export default function ProductDetailPage() {
 
   const fetchProduct = async () => {
     try {
-      const response = await apiService.get<ApiResponse<Product>>(`/api/products/${id}`)
-      setProduct(response.data!)
+      const response = await apiService.get<ApiResponse<{ product: Product }>>(`/api/products/${id}`)
+      setProduct(response.data?.product!)
     } catch (error) {
       toast.error('Failed to load product')
       navigate('/search')
@@ -65,8 +65,8 @@ export default function ProductDetailPage() {
 
   const fetchBids = async () => {
     try {
-      const response = await apiService.get<ApiResponse<Bid[]>>(`/api/products/${id}/bids`)
-      setBids(response.data || [])
+      const response = await apiService.get<ApiResponse<{ bids: Bid[] }>>(`/api/products/${id}/bids`)
+      setBids(response.data?.bids || [])
     } catch (error) {
       console.error('Failed to load bids:', error)
     }
