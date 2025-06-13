@@ -176,26 +176,9 @@ class ApiService {
     this.api.interceptors.request.use(requestInterceptor)
     this.api.interceptors.response.use(responseInterceptor, errorInterceptor)
     
-    // For auth API, simpler interceptors
-    this.authApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-      // Don't add auth header to refresh token requests
-      if (!config.url?.includes('/refresh-token')) {
-        const { accessToken } = useAuthStore.getState()
-        if (accessToken && config.headers) {
-          config.headers.Authorization = `Bearer ${accessToken}`
-        }
-      }
-      return config
-    })
-    
-    // Simpler error handler for auth API to avoid double handling
-    this.authApi.interceptors.response.use(
-      responseInterceptor, 
-      (error) => {
-        // Don't show error toasts for auth API failures
-        return Promise.reject(error)
-      }
-    )
+    // For auth API, use the same interceptors
+    this.authApi.interceptors.request.use(requestInterceptor)
+    this.authApi.interceptors.response.use(responseInterceptor, errorInterceptor)
   }
 
   // Generic request methods

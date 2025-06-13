@@ -5,8 +5,8 @@ export class EmailService {
   private transporter: nodemailer.Transporter | null = null
 
   constructor() {
-    // Only initialize transporter if email credentials are provided
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    // Only initialize transporter if not in development mode and email credentials are provided
+    if (process.env.NODE_ENV !== 'development' && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -22,11 +22,16 @@ export class EmailService {
   async sendVerificationEmail(email: string, token: string): Promise<void> {
     const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`
 
-    // In development mode without email config, just log the verification link
-    if (!this.transporter || process.env.NODE_ENV === 'development') {
+    // In development mode, just log the verification link
+    if (process.env.NODE_ENV === 'development') {
       logger.info(`📧 Email verification link for ${email}: ${verificationUrl}`)
       logger.info(`🔑 Verification token: ${token}`)
       return
+    }
+
+    // If no transporter in production, throw error
+    if (!this.transporter) {
+      throw new Error('Email service not configured')
     }
 
     const mailOptions = {
@@ -79,11 +84,16 @@ export class EmailService {
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`
 
-    // In development mode without email config, just log the reset link
-    if (!this.transporter || process.env.NODE_ENV === 'development') {
+    // In development mode, just log the reset link
+    if (process.env.NODE_ENV === 'development') {
       logger.info(`🔒 Password reset link for ${email}: ${resetUrl}`)
       logger.info(`🔑 Reset token: ${token}`)
       return
+    }
+
+    // If no transporter in production, throw error
+    if (!this.transporter) {
+      throw new Error('Email service not configured')
     }
 
     const mailOptions = {
@@ -125,10 +135,8 @@ export class EmailService {
     }
 
     try {
-      if (this.transporter) {
-        await this.transporter.sendMail(mailOptions)
-        logger.info(`Password reset email sent to: ${email}`)
-      }
+      await this.transporter.sendMail(mailOptions)
+      logger.info(`Password reset email sent to: ${email}`)
     } catch (error) {
       logger.error('Failed to send password reset email:', error)
       throw new Error('Failed to send password reset email')
@@ -136,10 +144,15 @@ export class EmailService {
   }
 
   async sendWelcomeEmail(email: string, firstName?: string): Promise<void> {
-    // In development mode without email config, just log
-    if (!this.transporter || process.env.NODE_ENV === 'development') {
+    // In development mode, just log
+    if (process.env.NODE_ENV === 'development') {
       logger.info(`🎉 Welcome email would be sent to: ${email}`)
       return
+    }
+
+    // If no transporter in production, throw error
+    if (!this.transporter) {
+      throw new Error('Email service not configured')
     }
 
     const mailOptions = {
@@ -185,10 +198,8 @@ export class EmailService {
     }
 
     try {
-      if (this.transporter) {
-        await this.transporter.sendMail(mailOptions)
-        logger.info(`Welcome email sent to: ${email}`)
-      }
+      await this.transporter.sendMail(mailOptions)
+      logger.info(`Welcome email sent to: ${email}`)
     } catch (error) {
       logger.error('Failed to send welcome email:', error)
       // Don't throw error for welcome email as it's not critical
