@@ -8,7 +8,8 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  verifyEmailSchema 
+  verifyEmailSchema,
+  updateProfileSchema
 } from '../validators/authValidators'
 
 export class AuthController {
@@ -133,6 +134,21 @@ export class AuthController {
     }
   }
 
+  resendVerification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body) // Reuse email validation
+      
+      await this.authService.resendVerificationEmail(email)
+      
+      res.json({
+        success: true,
+        message: 'Verification email sent'
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+
   forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email } = forgotPasswordSchema.parse(req.body)
@@ -190,7 +206,9 @@ export class AuthController {
         throw new AppError('User not authenticated', 401)
       }
       
-      const user = await this.authService.updateUserProfile(userId, req.body)
+      const validatedData = updateProfileSchema.parse(req.body)
+      
+      const user = await this.authService.updateUserProfile(userId, validatedData)
       
       res.json({
         success: true,

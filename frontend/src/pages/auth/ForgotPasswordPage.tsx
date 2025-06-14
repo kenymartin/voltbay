@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     try {
-      await apiService.post('/api/auth/forgot-password', form)
+      await apiService.authPost('/api/auth/forgot-password', form)
       setIsSuccess(true)
       toast.success('Password reset instructions sent to your email')
     } catch (error: any) {

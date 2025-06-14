@@ -232,7 +232,41 @@ export class AuthService {
       }
     })
 
+    // Send welcome email after verification
+    await this.emailService.sendWelcomeEmail(user.email, user.firstName || undefined)
+
     logger.info(`Email verified for user: ${user.email}`)
+  }
+
+  async resendVerificationEmail(email: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (!user) {
+      // Don't reveal if email exists
+      return
+    }
+
+    if (user.verified) {
+      throw new AppError('Email is already verified', 400)
+    }
+
+    // Generate new verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex')
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationToken,
+        emailVerificationExpires
+      }
+    })
+
+    await this.emailService.sendVerificationEmail(email, emailVerificationToken)
+
+    logger.info(`Verification email resent to: ${email}`)
   }
 
   async forgotPassword(email: string): Promise<void> {

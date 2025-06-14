@@ -112,6 +112,39 @@ const walletAuth = async (req: any, res: any, next: any) => {
   }
 }
 
+// Verification middleware for wallet financial transactions
+const requireVerified = async (req: any, res: any, next: any) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      } as ApiResponse<null>)
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { verified: true }
+    })
+
+    if (!user?.verified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Email verification required to perform financial transactions. Please verify your email address.',
+        error: 'VERIFICATION_REQUIRED'
+      } as ApiResponse<null>)
+    }
+
+    next()
+  } catch (error) {
+    console.error('Verification check error:', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Verification check failed'
+    } as ApiResponse<null>)
+  }
+}
+
 // Simple test endpoint
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Wallet routes working' })
@@ -170,7 +203,7 @@ router.get('/test-balance', async (req, res) => {
 // Apply custom authentication to all wallet routes except test endpoints
 router.use(walletAuth)
 
-// Get wallet balance
+// Get wallet balance (read-only, no verification required)
 router.get('/balance', async (req, res) => {
   try {
     const userId = req.user?.id
@@ -212,7 +245,7 @@ router.get('/balance', async (req, res) => {
   }
 })
 
-// Get wallet statistics
+// Get wallet statistics (read-only, no verification required)
 router.get('/stats', async (req, res) => {
   try {
     const userId = req.user?.id
@@ -267,7 +300,7 @@ router.get('/stats', async (req, res) => {
   }
 })
 
-// Get wallet transactions
+// Get wallet transactions (read-only, no verification required)
 router.get('/transactions', async (req, res) => {
   try {
     const userId = req.user?.id
@@ -317,8 +350,8 @@ router.get('/transactions', async (req, res) => {
   }
 })
 
-// Add funds to wallet
-router.post('/add-funds', async (req, res) => {
+// Add funds to wallet (requires verification)
+router.post('/add-funds', requireVerified, async (req, res) => {
   try {
     const { amount, reference, description } = req.body
     const userId = req.user?.id
@@ -352,8 +385,8 @@ router.post('/add-funds', async (req, res) => {
   }
 })
 
-// Transfer funds between users
-router.post('/transfer', async (req, res) => {
+// Transfer funds between users (requires verification)
+router.post('/transfer', requireVerified, async (req, res) => {
   try {
     const { toUserId, amount, description, reference } = req.body
     const userId = req.user?.id

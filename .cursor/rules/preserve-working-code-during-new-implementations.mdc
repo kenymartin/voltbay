@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Rule Description:
+When I request a new feature, bug fix, or implementation, do not modify existing code that is already working correctly. This includes files, functions, types, or components that are currently functional.
+
+Instructions:
+
+Only add new logic — do not refactor, restructure, or reimplement existing code unless I explicitly request it.
+
+Create new files, new functions, or new components for the implementation, and integrate with existing logic safely if needed.
+
+If integration is necessary, make minimal and non-destructive changes.
+
+Do not rename variables, refactor classes, change logic flow, or touch existing business logic unless I give explicit permission.
+
+If unsure, ask before modifying existing parts of the codebase.
+
+Scope:
+Applies to all features in the GoHaul project, including backend (Node.js/Express/Prisma) and frontend (React/Vite/TypeScript).
+

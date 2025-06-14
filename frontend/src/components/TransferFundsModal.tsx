@@ -65,8 +65,15 @@ const TransferFundsModal: React.FC<TransferFundsModalProps> = ({
       })
       
       onSuccess()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transfer failed')
+    } catch (err: any) {
+      console.error('Transfer funds error:', err)
+      
+      // Handle verification error specifically
+      if (err.response?.status === 403 && err.response?.data?.error === 'VERIFICATION_REQUIRED') {
+        setError('Email verification required to transfer funds. Please verify your email address.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Transfer failed')
+      }
       setStep('confirm')
     } finally {
       setLoading(false)

@@ -34,12 +34,12 @@ export const resetPasswordSchema = z.object({
 })
 
 export const updateProfileSchema = z.object({
-  firstName: z.string().min(1, 'First name cannot be empty').optional(),
-  lastName: z.string().min(1, 'Last name cannot be empty').optional(),
-  phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone number format').optional(),
-  street: z.string().min(1, 'Street cannot be empty').optional(),
-  city: z.string().min(1, 'City cannot be empty').optional(),
-  state: z.string().min(1, 'State cannot be empty').optional(),
-  zipCode: z.string().min(1, 'Zip code cannot be empty').optional(),
-  country: z.string().min(1, 'Country cannot be empty').optional()
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().regex(/^\+?[\d\s\-\(\)]*$/, 'Invalid phone number format').optional().or(z.literal('')),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional()
 }) 

@@ -3,6 +3,7 @@ import { useAuthStore } from './store/authStore'
 import GuestLayout from './layouts/GuestLayout'
 import UserLayout from './layouts/UserLayout'
 import AdminLayout from './layouts/AdminLayout'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Pages
 import HomePage from './pages/HomePage'
@@ -10,6 +11,7 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
+import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import SearchPage from './pages/SearchPage'
 import AuctionsPage from './pages/AuctionsPage'
@@ -34,17 +36,54 @@ function App() {
       {/* Public routes */}
       <Route path="/" element={<GuestLayout />}>
         <Route index element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/auctions" element={<AuctionsPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order-success" element={<OrderSuccessPage />} />
+      </Route>
+
+      {/* Auth routes - redirect to dashboard if already logged in */}
+      <Route path="/" element={<GuestLayout />}>
+        <Route 
+          path="/login" 
+          element={
+            <ProtectedRoute requireAuth={false}>
+              <LoginPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            <ProtectedRoute requireAuth={false}>
+              <RegisterPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+      </Route>
+
+      {/* Protected routes that require authentication but can be accessed by guests with redirect */}
+      <Route path="/" element={<GuestLayout />}>
+        <Route 
+          path="/checkout" 
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/order-success" 
+          element={
+            <ProtectedRoute requireAuth={true}>
+              <OrderSuccessPage />
+            </ProtectedRoute>
+          } 
+        />
       </Route>
 
       {/* Protected user routes */}
