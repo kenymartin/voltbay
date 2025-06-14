@@ -72,9 +72,23 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error('Login error:', err)
-      setError({ 
-        message: err.response?.data?.message || 'An error occurred during login. Please try again.' 
-      })
+      
+      // More specific error handling
+      let errorMessage = 'An error occurred during login. Please try again.'
+      
+      if (err.code === 'NETWORK_ERROR' || err.message?.includes('Network Error')) {
+        errorMessage = 'Unable to connect to the authentication service. Please check your internet connection and try again.'
+      } else if (err.code === 'ECONNREFUSED' || err.message?.includes('ECONNREFUSED')) {
+        errorMessage = 'Authentication service is temporarily unavailable. Please try again in a moment.'
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Authentication service endpoint not found. Please contact support if this persists.'
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'Server error occurred. Please try again in a moment.'
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message
+      }
+      
+      setError({ message: errorMessage })
     } finally {
       setIsLoading(false)
     }

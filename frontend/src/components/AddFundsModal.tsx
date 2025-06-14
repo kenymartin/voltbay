@@ -59,8 +59,15 @@ const AddFundsModal: React.FC<AddFundsModalProps> = ({ onClose, onSuccess }) => 
       })
       
       onSuccess()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add funds')
+    } catch (err: any) {
+      console.error('Add funds error:', err)
+      
+      // Handle verification error specifically
+      if (err.response?.status === 403 && err.response?.data?.error === 'VERIFICATION_REQUIRED') {
+        setError('Email verification required to add funds. Please verify your email address.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to add funds')
+      }
       setStep('payment')
     } finally {
       setLoading(false)

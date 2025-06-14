@@ -1,8 +1,16 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Zap, Shield, TrendingUp, Star, ArrowRight } from 'lucide-react'
 import SEO from '../components/SEO'
+import ProductCarousel from '../components/ProductCarousel'
+import ProductCarouselSkeleton from '../components/ProductCarouselSkeleton'
+import apiService from '../services/api'
+import type { Product, ApiResponse } from '../../../shared/types'
 
 export default function HomePage() {
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
   const featuredCategories = [
     {
       name: 'Solar Panels',
@@ -30,13 +38,14 @@ export default function HomePage() {
     }
   ]
 
-  const featuredProducts = [
+  // Mock data as fallback
+  const mockFeaturedProducts = [
     {
       id: '1',
       title: 'High-Efficiency 400W Solar Panel',
       price: 299.99,
       originalPrice: 349.99,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=250&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
       rating: 4.8,
       reviews: 124,
       seller: 'SolarTech Pro',
@@ -46,7 +55,7 @@ export default function HomePage() {
       id: '2',
       title: '5kW String Inverter - Premium Grade',
       price: 1299.99,
-      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=250&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
       rating: 4.9,
       reviews: 89,
       seller: 'PowerSolutions',
@@ -57,7 +66,7 @@ export default function HomePage() {
       id: '3',
       title: 'Tesla Powerwall 2 - Like New',
       price: 8999.99,
-      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=250&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
       rating: 5.0,
       reviews: 45,
       seller: 'EnergyHub',
@@ -68,13 +77,218 @@ export default function HomePage() {
       title: 'Complete Solar Kit 10kW System',
       price: 12999.99,
       originalPrice: 15999.99,
-      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=250&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
       rating: 4.7,
       reviews: 67,
       seller: 'SolarComplete',
       isAuction: false
+    },
+    {
+      id: '5',
+      title: 'Microinverter Set - 20 Units',
+      price: 2499.99,
+      image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.6,
+      reviews: 156,
+      seller: 'MicroPower',
+      isAuction: false
+    },
+    {
+      id: '6',
+      title: 'Solar Charge Controller MPPT 60A',
+      price: 189.99,
+      originalPrice: 229.99,
+      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.5,
+      reviews: 203,
+      seller: 'ChargeMax',
+      isAuction: true,
+      timeLeft: '1d 8h'
+    },
+    {
+      id: '7',
+      title: 'Flexible Solar Panel 100W',
+      price: 149.99,
+      image: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.4,
+      reviews: 89,
+      seller: 'FlexSolar',
+      isAuction: false
+    },
+    {
+      id: '8',
+      title: 'Solar Monitoring System Pro',
+      price: 399.99,
+      image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.8,
+      reviews: 76,
+      seller: 'MonitorTech',
+      isAuction: false
+    },
+    {
+      id: '9',
+      title: 'Monocrystalline Solar Panel 320W',
+      price: 249.99,
+      originalPrice: 299.99,
+      image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.7,
+      reviews: 142,
+      seller: 'SolarMax',
+      isAuction: false
+    },
+    {
+      id: '10',
+      title: 'Grid-Tie Inverter 3000W',
+      price: 899.99,
+      image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.6,
+      reviews: 98,
+      seller: 'GridPower',
+      isAuction: true,
+      timeLeft: '3d 5h'
+    },
+    {
+      id: '11',
+      title: 'Lithium Battery Bank 48V 100Ah',
+      price: 3499.99,
+      originalPrice: 3999.99,
+      image: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.9,
+      reviews: 67,
+      seller: 'BatteryPro',
+      isAuction: false
+    },
+    {
+      id: '12',
+      title: 'Solar Panel Mounting Rails Kit',
+      price: 199.99,
+      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.5,
+      reviews: 234,
+      seller: 'MountTech',
+      isAuction: false
+    },
+    {
+      id: '13',
+      title: 'Portable Solar Generator 1500W',
+      price: 1299.99,
+      originalPrice: 1599.99,
+      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.8,
+      reviews: 156,
+      seller: 'PortablePower',
+      isAuction: true,
+      timeLeft: '12h 30m'
+    },
+    {
+      id: '14',
+      title: 'Solar Water Heater Controller',
+      price: 89.99,
+      image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.4,
+      reviews: 87,
+      seller: 'HeatControl',
+      isAuction: false
+    },
+    {
+      id: '15',
+      title: 'Bifacial Solar Panel 450W',
+      price: 399.99,
+      originalPrice: 449.99,
+      image: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.9,
+      reviews: 78,
+      seller: 'BifacialTech',
+      isAuction: false
+    },
+    {
+      id: '16',
+      title: 'Solar Combiner Box 6-String',
+      price: 159.99,
+      image: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      rating: 4.6,
+      reviews: 123,
+      seller: 'CombinerPro',
+      isAuction: true,
+      timeLeft: '2d 18h'
     }
   ]
+
+  useEffect(() => {
+    fetchFeaturedProducts()
+  }, [])
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      setLoading(true)
+      // Try to fetch real products from API
+      const response = await apiService.get<ApiResponse<Product[]>>('/api/products/search?limit=16&status=ACTIVE')
+      
+      if (response.success && response.data) {
+        // Handle nested response structure
+        const products = Array.isArray(response.data) ? response.data : (response.data as any).products || []
+        
+        if (products.length > 0) {
+          // Transform API products to match carousel interface
+          const transformedProducts = products.map((product: Product) => ({
+            id: product.id,
+            title: product.title,
+            price: parseFloat(product.price.toString()),
+            image: product.imageUrls?.[0] || 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+            rating: 4.5, // Default rating since we don't have reviews yet
+            reviews: Math.floor(Math.random() * 200) + 10, // Random reviews for demo
+            seller: product.owner?.firstName ? `${product.owner.firstName} ${product.owner.lastName}` : 'VoltBay Seller',
+            isAuction: product.isAuction || false,
+            timeLeft: product.isAuction && product.auctionEndDate ? 
+              calculateTimeLeft(product.auctionEndDate) : undefined
+          }))
+          
+          setFeaturedProducts(transformedProducts)
+        } else {
+          // If no real products, use mock data but mark them as mock
+          const mockProductsWithFlag = mockFeaturedProducts.map(product => ({
+            ...product,
+            isMock: true
+          }))
+          setFeaturedProducts(mockProductsWithFlag)
+        }
+      } else {
+        // Fallback to mock data if API fails
+        const mockProductsWithFlag = mockFeaturedProducts.map(product => ({
+          ...product,
+          isMock: true
+        }))
+        setFeaturedProducts(mockProductsWithFlag)
+      }
+    } catch (error) {
+      console.error('Failed to fetch featured products:', error)
+      // Fallback to mock data
+      const mockProductsWithFlag = mockFeaturedProducts.map(product => ({
+        ...product,
+        isMock: true
+      }))
+      setFeaturedProducts(mockProductsWithFlag)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const calculateTimeLeft = (endDate: string | Date) => {
+    const end = new Date(endDate)
+    const now = new Date()
+    const diff = end.getTime() - now.getTime()
+    
+    if (diff <= 0) return 'Ended'
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`
+    } else {
+      return `${hours}h`
+    }
+  }
 
   return (
     <div className="min-h-screen">
@@ -247,59 +461,21 @@ export default function HomePage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/products/${product.id}`}
-                className="group card hover:shadow-lg transition-all duration-300 overflow-hidden"
-              >
-                <div className="relative">
-                  <img
-                    src={product.image}
-                    alt={product.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {product.isAuction && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-                      Auction: {product.timeLeft}
-                    </div>
-                  )}
-                  {product.originalPrice && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
-                      Sale
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
-                    {product.title}
-                  </h3>
-                  <div className="flex items-center mb-2">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="text-sm text-gray-600 ml-1">
-                        {product.rating} ({product.reviews})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="text-lg font-bold text-gray-900">
-                        ${product.price.toLocaleString()}
-                      </span>
-                      {product.originalPrice && (
-                        <span className="text-sm text-gray-500 line-through ml-2">
-                          ${product.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">by {product.seller}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {loading ? (
+            <ProductCarouselSkeleton />
+          ) : (
+            <ProductCarousel 
+              products={featuredProducts}
+              autoPlay={true}
+              autoPlayInterval={90000}
+              showDots={false}
+              itemsPerView={{
+                mobile: 1,
+                tablet: 2,
+                desktop: 4
+              }}
+            />
+          )}
         </div>
       </section>
 

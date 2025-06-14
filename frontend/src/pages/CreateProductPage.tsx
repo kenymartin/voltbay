@@ -10,11 +10,13 @@ import {
   Plus, 
   X, 
   Info,
-  Zap
+  Zap,
+  Minus
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
+import VerificationBanner from '../components/VerificationBanner'
 import type { Category, ProductCondition, ApiResponse } from '../../../shared/types'
 
 interface ProductForm {
@@ -90,12 +92,8 @@ export default function CreateProductPage() {
   const [dragActive, setDragActive] = useState(false)
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
     fetchCategories()
-  }, [user, navigate])
+  }, [])
 
   const fetchCategories = async () => {
     try {
@@ -247,8 +245,14 @@ export default function CreateProductPage() {
         navigate('/dashboard?tab=listings')
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create product')
       console.error('Product creation error:', error)
+      
+      // Handle verification error specifically
+      if (error.response?.status === 403 && error.response?.data?.error === 'VERIFICATION_REQUIRED') {
+        toast.error('Email verification required to create listings. Please verify your email address.')
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to create product')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -292,6 +296,11 @@ export default function CreateProductPage() {
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-6">
           <h1 className="text-2xl font-bold text-white">Create Product Listing</h1>
           <p className="text-primary-100 mt-1">List your solar products for sale or auction</p>
+        </div>
+
+        {/* Verification Banner */}
+        <div className="px-8 pt-6">
+          <VerificationBanner context="selling" />
         </div>
 
         {/* Tab Navigation */}

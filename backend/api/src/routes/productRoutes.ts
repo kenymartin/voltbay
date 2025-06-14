@@ -14,10 +14,10 @@ router.get('/:id', productController.getProduct)
 router.get('/:id/bids', productController.getProductBids)
 
 // Protected routes
-router.post('/', authMiddleware.authenticate, productController.createProduct)
-router.put('/:id', authMiddleware.authenticate, productController.updateProduct)
-router.delete('/:id', authMiddleware.authenticate, productController.deleteProduct)
+router.post('/', authMiddleware.authenticate, authMiddleware.requireVerified, productController.createProduct)
+router.put('/:id', authMiddleware.authenticate, authMiddleware.requireVerified, productController.updateProduct)
+router.delete('/:id', authMiddleware.authenticate, authMiddleware.requireVerified, productController.deleteProduct)
 router.get('/user/my-products', authMiddleware.authenticate, productController.getUserProducts)
-router.post('/:id/bids', authMiddleware.authenticate, productController.placeBid)
+router.post('/:id/bids', authMiddleware.authenticate, authMiddleware.requireVerified, productController.placeBid)
 
 export default router 

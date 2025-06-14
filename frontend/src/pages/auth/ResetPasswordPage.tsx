@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      await apiService.post('/api/auth/reset-password', {
+      await apiService.authPost('/api/auth/reset-password', {
         token,
         password: form.password
       })

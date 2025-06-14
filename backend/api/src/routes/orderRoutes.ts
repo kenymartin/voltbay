@@ -8,8 +8,8 @@ const orderController = new OrderController()
 // All order routes require authentication
 router.use(authMiddleware.authenticate)
 
-// Order management
-router.post('/', orderController.createOrder)
+// Order management - creating orders requires verification
+router.post('/', authMiddleware.requireVerified, orderController.createOrder)
 router.get('/', orderController.getOrders)
 router.get('/stats', orderController.getOrderStats)
 router.get('/:id', orderController.getOrder)

@@ -28,12 +28,8 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    if (!authUser) {
-      navigate('/login')
-      return
-    }
     fetchUserProfile()
-  }, [authUser, navigate])
+  }, [])
 
   const fetchUserProfile = async () => {
     setLoading(true)

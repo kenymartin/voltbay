@@ -5,6 +5,8 @@ import WalletService from '../services/walletService'
 import AddFundsModal from './AddFundsModal'
 import TransferFundsModal from './TransferFundsModal'
 import TransactionHistory from './TransactionHistory'
+import VerificationBanner from './VerificationBanner'
+import { useAuthStore } from '../store/authStore'
 
 interface WalletDashboardProps {
   className?: string
@@ -88,10 +90,12 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ className = '' }) => 
     return (
       <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
         <div className="text-center">
-          <div className="text-red-500 text-lg font-semibold mb-2">Error Loading Wallet</div>
-          <p className="text-gray-600 mb-4">{error}</p>
+          {/* <div className="text-red-500 text-lg font-semibold mb-2">Error Loading Wallet</div> */}
+            <div className="text-red-500 text-lg font-semibold mb-2">Under construction</div> 
+          {/* <p className="text-gray-600 mb-4">{error}</p> */}
+          <p className="text-gray-600 mb-4">Please check back later</p>
           <button
-            onClick={fetchWalletData}
+            // onClick={fetchWalletData}
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
           >
             Try Again
@@ -113,6 +117,9 @@ const WalletDashboard: React.FC<WalletDashboardProps> = ({ className = '' }) => 
 
   return (
     <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
+      {/* Verification Banner */}
+      <VerificationBanner context="wallet" />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">My Wallet</h2>
