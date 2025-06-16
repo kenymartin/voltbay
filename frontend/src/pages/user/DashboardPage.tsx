@@ -363,7 +363,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             onClick={() => navigate('/sell')}
             className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
@@ -400,6 +400,19 @@ export default function DashboardPage() {
               </div>
               <h3 className="font-medium text-gray-900 mb-1">My Bids</h3>
               <p className="text-sm text-gray-600">Track auction bids</p>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => navigate('/orders')}
+            className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                <ShoppingCart className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="font-medium text-gray-900 mb-1">My Orders</h3>
+              <p className="text-sm text-gray-600">Track purchases & sales</p>
             </div>
           </button>
           
@@ -540,13 +553,31 @@ export default function DashboardPage() {
 
   const OrdersTab = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">My Orders</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">My Orders</h2>
+        <button
+          onClick={() => navigate('/orders')}
+          className="btn btn-primary"
+        >
+          View All Orders
+        </button>
+      </div>
 
       {orders.length > 0 ? (
         <div className="space-y-4">
-          {orders.map((order) => (
+          {orders.slice(0, 5).map((order) => (
             <OrderCard key={order.id} order={order} />
           ))}
+          {orders.length > 5 && (
+            <div className="text-center pt-4">
+              <button
+                onClick={() => navigate('/orders')}
+                className="text-primary-600 hover:text-primary-800 font-medium"
+              >
+                View {orders.length - 5} more orders →
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-12">

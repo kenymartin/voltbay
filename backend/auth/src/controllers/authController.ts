@@ -219,4 +219,24 @@ export class AuthController {
       next(error)
     }
   }
+
+  verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user?.id
+      
+      if (!userId) {
+        throw new AppError('User not authenticated', 401)
+      }
+      
+      const user = await this.authService.getUserProfile(userId)
+      
+      res.json({
+        success: true,
+        message: 'Token is valid',
+        data: { user }
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
 } 

@@ -467,7 +467,7 @@ export default function HomePage() {
             <ProductCarousel 
               products={featuredProducts}
               autoPlay={true}
-              autoPlayInterval={90000}
+              autoPlayInterval={50000}
               showDots={false}
               itemsPerView={{
                 mobile: 1,

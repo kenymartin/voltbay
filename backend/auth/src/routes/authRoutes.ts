@@ -18,6 +18,7 @@ router.post('/reset-password', authController.resetPassword)
 // Protected routes
 router.get('/profile', authMiddleware.authenticate, authController.getProfile)
 router.put('/profile', authMiddleware.authenticate, authController.updateProfile)
+router.get('/verify', authMiddleware.authenticate, authController.verifyToken)
 
 // Health check
 router.get('/health', (req, res) => {

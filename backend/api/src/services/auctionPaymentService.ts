@@ -1,4 +1,4 @@
-import { stripe, STRIPE_CONFIG, handleStripeError, calculatePlatformFee } from '../config/stripe'
+import stripe, { STRIPE_CONFIG, handleStripeError, calculatePlatformFee } from '../config/stripe'
 import { PrismaClient } from '@prisma/client'
 import PaymentService from './paymentService'
 

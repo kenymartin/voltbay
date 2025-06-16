@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { stripe, STRIPE_CONFIG, handleStripeError, calculatePlatformFee } from '../config/stripe'
+import stripe, { STRIPE_CONFIG, handleStripeError, calculatePlatformFee } from '../config/stripe'
 // import Stripe from 'stripe'
 
 const prisma = new PrismaClient()
@@ -127,10 +127,11 @@ export class PaymentService {
           platformFee: platformFee.toString()
         },
         description: `Purchase: ${product.title}`,
-        application_fee_amount: platformFee,
-        transfer_data: {
-          destination: product.owner.stripeAccountId || '', // Will be set up in Phase 2
-        }
+        // Note: application_fee_amount and transfer_data will be added when Stripe Connect is implemented
+        // application_fee_amount: platformFee,
+        // transfer_data: {
+        //   destination: product.owner.stripeAccountId || '',
+        // }
       })
 
       // Update order with payment intent ID

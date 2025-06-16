@@ -1,19 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
 import path from 'path'
 
-// https://vitejs.dev/config/
+// Check if SSL certificates exist
+const certPath = path.resolve(__dirname, 'localhost.pem')
+const keyPath = path.resolve(__dirname, 'localhost-key.pem')
+const hasSSLCerts = fs.existsSync(certPath) && fs.existsSync(keyPath)
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    strictPort: false,
     host: '0.0.0.0',
-    cors: true,
-    open: false,
-    hmr: {
-      port: 24678
-    }
+    // Temporarily disable HTTPS for easier development
+    // https: hasSSLCerts ? {
+    //   key: fs.readFileSync(keyPath),
+    //   cert: fs.readFileSync(certPath),
+    // } : false,
   },
   resolve: {
     alias: {
@@ -23,7 +27,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: {

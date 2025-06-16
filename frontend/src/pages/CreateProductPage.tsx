@@ -231,6 +231,13 @@ export default function CreateProductPage() {
         specifications: form.specifications.filter(spec => spec.name && spec.value)
       }
       
+      // Convert auctionEndDate to proper ISO format if it's an auction
+      if (productData.isAuction && productData.auctionEndDate) {
+        // Convert datetime-local format to ISO string
+        const auctionDate = new Date(productData.auctionEndDate)
+        productData.auctionEndDate = auctionDate.toISOString()
+      }
+      
       // Remove empty fields
       if (!productData.isAuction) {
         delete productData.auctionEndDate

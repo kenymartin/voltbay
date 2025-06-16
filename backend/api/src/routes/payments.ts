@@ -1,10 +1,10 @@
 import express from 'express'
 import { z } from 'zod'
 import { PrismaClient } from '@prisma/client'
-import PaymentService from '../services/paymentService'
-import AuctionPaymentService from '../services/auctionPaymentService'
+import { PaymentService } from '../services/paymentService'
+import { AuctionPaymentService } from '../services/auctionPaymentService'
 import { authenticateUser } from '../middleware/auth'
-import { stripe, STRIPE_CONFIG } from '../config/stripe'
+import stripe, { STRIPE_CONFIG } from '../config/stripe'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -352,7 +352,7 @@ router.get('/config', (req, res) => {
   res.json({
     success: true,
     data: {
-      publicKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      publicKey: STRIPE_CONFIG.PUBLISHABLE_KEY,
       minimumAmount: STRIPE_CONFIG.MINIMUM_CHARGE_AMOUNT / 100,
       currency: STRIPE_CONFIG.DEFAULT_CURRENCY,
       platformFeePercentage: STRIPE_CONFIG.PLATFORM_FEE_PERCENTAGE

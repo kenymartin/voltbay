@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Product } from '../../../shared/types'
 
 export interface CartItem {
@@ -13,6 +12,7 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[]
   isOpen: boolean
+  currentUserId: string | null
   
   // Actions
   addToCart: (product: Product, quantity?: number) => void
@@ -22,6 +22,7 @@ interface CartStore {
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
+  setCurrentUser: (userId: string | null) => void
   
   // Getters
   getTotalPrice: () => number
@@ -30,104 +31,163 @@ interface CartStore {
   isInCart: (productId: string) => boolean
 }
 
-export const useCartStore = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
-      isOpen: false,
+// Helper functions for user-specific storage
+const getUserStorageKey = (userId: string | null) => {
+  return userId ? `voltbay-cart-${userId}` : 'voltbay-cart-guest'
+}
 
-      addToCart: (product: Product, quantity = 1) => {
-        const { items } = get()
-        const existingItem = items.find(item => item.productId === product.id)
-
-        if (existingItem) {
-          // Update quantity if item already exists
-          set({
-            items: items.map(item =>
-              item.productId === product.id
-                ? { ...item, quantity: item.quantity + quantity }
-                : item
-            )
-          })
-        } else {
-          // Add new item to cart
-          const newItem: CartItem = {
-            productId: product.id,
-            product,
-            quantity,
-            price: parseFloat(product.price.toString()),
-            addedAt: new Date()
-          }
-          
-          set({
-            items: [...items, newItem]
-          })
-        }
-      },
-
-      removeFromCart: (productId: string) => {
-        set({
-          items: get().items.filter(item => item.productId !== productId)
-        })
-      },
-
-      updateQuantity: (productId: string, quantity: number) => {
-        if (quantity <= 0) {
-          get().removeFromCart(productId)
-          return
-        }
-
-        set({
-          items: get().items.map(item =>
-            item.productId === productId
-              ? { ...item, quantity }
-              : item
-          )
-        })
-      },
-
-      clearCart: () => {
-        set({ items: [] })
-      },
-
-      toggleCart: () => {
-        set({ isOpen: !get().isOpen })
-      },
-
-      openCart: () => {
-        set({ isOpen: true })
-      },
-
-      closeCart: () => {
-        set({ isOpen: false })
-      },
-
-      getTotalPrice: () => {
-        return get().items.reduce((total, item) => {
-          return total + (item.price * item.quantity)
-        }, 0)
-      },
-
-      getTotalItems: () => {
-        return get().items.reduce((total, item) => {
-          return total + item.quantity
-        }, 0)
-      },
-
-      getItemQuantity: (productId: string) => {
-        const item = get().items.find(item => item.productId === productId)
-        return item ? item.quantity : 0
-      },
-
-      isInCart: (productId: string) => {
-        return get().items.some(item => item.productId === productId)
-      }
-    }),
-    {
-      name: 'voltbay-cart',
-      storage: createJSONStorage(() => localStorage),
-      // Only persist the items, not the UI state
-      partialize: (state) => ({ items: state.items })
+const loadCartFromStorage = (userId: string | null): CartItem[] => {
+  try {
+    const storageKey = getUserStorageKey(userId)
+    const stored = localStorage.getItem(storageKey)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // Convert addedAt back to Date objects
+      return parsed.map((item: any) => ({
+        ...item,
+        addedAt: new Date(item.addedAt)
+      }))
     }
-  )
-) 
+  } catch (error) {
+    console.error('Error loading cart from storage:', error)
+  }
+  return []
+}
+
+const saveCartToStorage = (userId: string | null, items: CartItem[]) => {
+  try {
+    const storageKey = getUserStorageKey(userId)
+    localStorage.setItem(storageKey, JSON.stringify(items))
+  } catch (error) {
+    console.error('Error saving cart to storage:', error)
+  }
+}
+
+const clearCartFromStorage = (userId: string | null) => {
+  try {
+    const storageKey = getUserStorageKey(userId)
+    localStorage.removeItem(storageKey)
+  } catch (error) {
+    console.error('Error clearing cart from storage:', error)
+  }
+}
+
+export const useCartStore = create<CartStore>((set, get) => ({
+  items: [],
+  isOpen: false,
+  currentUserId: null,
+
+  setCurrentUser: (userId: string | null) => {
+    const currentUserId = get().currentUserId
+    
+    // If user changed, save current cart and load user-specific cart
+    if (currentUserId !== userId) {
+      // Save current cart for the previous user
+      if (currentUserId !== null) {
+        saveCartToStorage(currentUserId, get().items)
+      }
+      
+      // Load cart for the new user
+      const userItems = loadCartFromStorage(userId)
+      
+      set({ 
+        currentUserId: userId,
+        items: userItems
+      })
+    }
+  },
+
+  addToCart: (product: Product, quantity = 1) => {
+    const { items, currentUserId } = get()
+    const existingItem = items.find(item => item.productId === product.id)
+
+    let newItems: CartItem[]
+
+    if (existingItem) {
+      // Update quantity if item already exists
+      newItems = items.map(item =>
+        item.productId === product.id
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      )
+    } else {
+      // Add new item to cart
+      const newItem: CartItem = {
+        productId: product.id,
+        product,
+        quantity,
+        price: parseFloat(product.price.toString()),
+        addedAt: new Date()
+      }
+      
+      newItems = [...items, newItem]
+    }
+
+    set({ items: newItems })
+    saveCartToStorage(currentUserId, newItems)
+  },
+
+  removeFromCart: (productId: string) => {
+    const { items, currentUserId } = get()
+    const newItems = items.filter(item => item.productId !== productId)
+    
+    set({ items: newItems })
+    saveCartToStorage(currentUserId, newItems)
+  },
+
+  updateQuantity: (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      get().removeFromCart(productId)
+      return
+    }
+
+    const { items, currentUserId } = get()
+    const newItems = items.map(item =>
+      item.productId === productId
+        ? { ...item, quantity }
+        : item
+    )
+
+    set({ items: newItems })
+    saveCartToStorage(currentUserId, newItems)
+  },
+
+  clearCart: () => {
+    const { currentUserId } = get()
+    set({ items: [] })
+    clearCartFromStorage(currentUserId)
+  },
+
+  toggleCart: () => {
+    set({ isOpen: !get().isOpen })
+  },
+
+  openCart: () => {
+    set({ isOpen: true })
+  },
+
+  closeCart: () => {
+    set({ isOpen: false })
+  },
+
+  getTotalPrice: () => {
+    return get().items.reduce((total, item) => {
+      return total + (item.price * item.quantity)
+    }, 0)
+  },
+
+  getTotalItems: () => {
+    return get().items.reduce((total, item) => {
+      return total + item.quantity
+    }, 0)
+  },
+
+  getItemQuantity: (productId: string) => {
+    const item = get().items.find(item => item.productId === productId)
+    return item ? item.quantity : 0
+  },
+
+  isInCart: (productId: string) => {
+    return get().items.some(item => item.productId === productId)
+  }
+})) 

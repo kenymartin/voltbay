@@ -6,6 +6,7 @@ import type { Product, Category, ProductSearchParams, ProductCondition, ApiRespo
 import { ProductSortBy, SortOrder } from '../../../shared/types'
 import SEO from '../components/SEO'
 import AddToCartButton from '../components/AddToCartButton'
+import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -129,14 +130,15 @@ export default function SearchPage() {
     return (
       <div 
         className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-        onClick={() => navigate(`/products/${product.id}`)}
+        onClick={() => navigate(`/product/${product.id}`)}
       >
         <div className="aspect-square bg-gray-200 overflow-hidden">
           {product.imageUrls && product.imageUrls.length > 0 ? (
             <img
-              src={product.imageUrls[0]}
+              src={getSafeImageUrls(product.imageUrls, product.category?.name)[0]}
               alt={product.title}
               className="w-full h-full object-cover"
+              onError={(e) => handleImageError(e, product.category?.name)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

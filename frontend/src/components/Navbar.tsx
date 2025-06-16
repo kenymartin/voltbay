@@ -20,9 +20,15 @@ export default function Navbar() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const { user, isAuthenticated, logout } = useAuthStore()
-  const { getTotalItems, toggleCart } = useCartStore()
+  const { getTotalItems, toggleCart, setCurrentUser } = useCartStore()
   const navigate = useNavigate()
   const profileMenuRef = useRef<HTMLDivElement>(null)
+
+  // Sync cart with current user
+  useEffect(() => {
+    const userId = user?.id || null
+    setCurrentUser(userId)
+  }, [user?.id, setCurrentUser])
 
   // Close profile menu when clicking outside
   useEffect(() => {

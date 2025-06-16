@@ -6,6 +6,7 @@ import type { Product, Category, ProductCondition, ApiResponse, PaginatedRespons
 import { ProductSortBy, SortOrder } from '../../../shared/types'
 import SEO from '../components/SEO'
 import AddToCartButton from '../components/AddToCartButton'
+import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -112,14 +113,15 @@ export default function ProductsPage() {
   const ProductCard = ({ product }: { product: Product }) => (
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => navigate(`/products/${product.id}`)}
+      onClick={() => navigate(`/product/${product.id}`)}
     >
       <div className="aspect-square bg-gray-200 overflow-hidden">
         {product.imageUrls && product.imageUrls.length > 0 ? (
           <img
-            src={product.imageUrls[0]}
+            src={getSafeImageUrls(product.imageUrls, product.category?.name)[0]}
             alt={product.title}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            onError={(e) => handleImageError(e, product.category?.name)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -164,15 +166,16 @@ export default function ProductsPage() {
   const ProductListItem = ({ product }: { product: Product }) => (
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => navigate(`/products/${product.id}`)}
+      onClick={() => navigate(`/product/${product.id}`)}
     >
       <div className="flex">
         <div className="w-48 h-48 bg-gray-200 flex-shrink-0">
           {product.imageUrls && product.imageUrls.length > 0 ? (
             <img
-              src={product.imageUrls[0]}
+              src={getSafeImageUrls(product.imageUrls, product.category?.name)[0]}
               alt={product.title}
               className="w-full h-full object-cover"
+              onError={(e) => handleImageError(e, product.category?.name)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

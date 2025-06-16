@@ -71,11 +71,35 @@ export class AuthMiddleware {
         throw new AppError('Authentication required', 401)
       }
 
-      // Additional verification check could be added here
-      // For now, we trust the auth service verification
+      // Get full user profile from auth service to check verification status
+      const authHeader = req.headers.authorization
+      const response = await axios.get(`${this.authServiceUrl}/api/auth/profile`, {
+        headers: {
+          Authorization: authHeader
+        }
+      })
+
+      if (!response.data.success) {
+        throw new AppError('Failed to verify user status', 500)
+      }
+
+      const user = response.data.data.user
+      if (!user.verified) {
+        throw new AppError('Email verification required to perform this action. Please verify your email address.', 403)
+      }
+
       next()
     } catch (error) {
-      next(error)
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          next(new AppError('Email verification required to perform this action. Please verify your email address.', 403))
+        } else {
+          logger.error('Verification check error:', error.message)
+          next(new AppError('Verification check failed', 500))
+        }
+      } else {
+        next(error)
+      }
     }
   }
 

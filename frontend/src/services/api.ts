@@ -100,6 +100,13 @@ class ApiService {
     const errorInterceptor = async (error: any) => {
       const originalRequest: CustomAxiosRequestConfig = error.config
 
+      console.log('🔧 API Error interceptor triggered:', {
+        status: error.response?.status,
+        url: originalRequest?.url,
+        retry: originalRequest?._retry,
+        isRefreshing: this.isRefreshing
+      })
+
       // Handle 401 errors
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true
@@ -115,6 +122,7 @@ class ApiService {
 
         // Don't retry if this was already a refresh token request
         if (originalRequest.url?.includes('/refresh-token')) {
+          console.log('🔧 Refresh token request failed, not retrying')
           this.onRefreshTokenFailure()
           return Promise.reject(error)
         }
@@ -124,11 +132,13 @@ class ApiService {
         const isAuthEndpoint = authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))
         
         if (isAuthEndpoint) {
+          console.log('🔧 Auth endpoint failed, not refreshing token')
           return Promise.reject(error)
         }
 
         // If already refreshing, wait for the result
         if (this.isRefreshing) {
+          console.log('🔧 Already refreshing token, waiting...')
           return new Promise((resolve) => {
             this.addRefreshSubscriber((token: string) => {
               originalRequest.headers!.Authorization = `Bearer ${token}`
@@ -138,12 +148,14 @@ class ApiService {
         }
 
         this.isRefreshing = true
+        console.log('🔧 Starting token refresh process...')
 
         try {
           console.log('🔧 Attempting token refresh...')
           const refreshResponse = await this.authApi.post('/api/auth/refresh-token', {})
           
           const { accessToken } = refreshResponse.data.data
+          console.log('🔧 Token refresh successful, new token received')
           
           useAuthStore.getState().updateToken(accessToken)
           this.isRefreshing = false
@@ -151,6 +163,7 @@ class ApiService {
           
           // Retry original request with new token
           originalRequest.headers!.Authorization = `Bearer ${accessToken}`
+          console.log('🔧 Retrying original request with new token')
           return axios(originalRequest)
         } catch (refreshError) {
           console.error('🔧 Token refresh failed:', refreshError)

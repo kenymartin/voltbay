@@ -1,5 +1,5 @@
 import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client'
-import { stripe } from '../config/stripe'
+import stripe from '../config/stripe'
 import { AppError } from '../utils/errors'
 import { logger } from '../utils/logger'
 

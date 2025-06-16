@@ -14,15 +14,21 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   src,
   alt,
   className = '',
-  fallbackSrc = 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=400&h=300&fit=crop',
+  fallbackSrc = 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
   showIcon = true,
   iconClassName = 'w-8 h-8 text-gray-400'
 }) => {
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [fallbackError, setFallbackError] = useState(false)
 
   const handleError = () => {
     setHasError(true)
+    setIsLoading(false)
+  }
+
+  const handleFallbackError = () => {
+    setFallbackError(true)
     setIsLoading(false)
   }
 
@@ -30,23 +36,38 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
     setIsLoading(false)
   }
 
-  // If no src provided or error occurred, show fallback
-  if (!src || hasError) {
-    return (
-      <div className={`bg-gray-100 flex items-center justify-center ${className}`}>
-        {showIcon ? (
+  // Check if the src is a problematic URL (like via.placeholder.com)
+  const isProblematicUrl = src && (
+    src.includes('via.placeholder.com') || 
+    src.includes('placeholder.com') ||
+    src.startsWith('blob:') && !src.includes(window.location.origin)
+  )
+
+  // If no src provided, error occurred, or problematic URL, show fallback
+  if (!src || hasError || isProblematicUrl) {
+    // If fallback also failed or we want to show icon, show icon
+    if (fallbackError || !fallbackSrc || showIcon) {
+      return (
+        <div className={`bg-gray-100 flex items-center justify-center ${className}`}>
           <Package className={iconClassName} />
-        ) : (
-          <img
-            src={fallbackSrc}
-            alt={alt}
-            className={className}
-            onError={() => {
-              // If fallback also fails, show icon
-              if (showIcon) return
-            }}
-          />
+        </div>
+      )
+    }
+
+    // Try fallback image
+    return (
+      <div className="relative">
+        {isLoading && (
+          <div className={`absolute inset-0 bg-gray-100 animate-pulse ${className}`} />
         )}
+        <img
+          src={fallbackSrc}
+          alt={alt}
+          className={className}
+          onError={handleFallbackError}
+          onLoad={handleLoad}
+          style={{ display: isLoading ? 'none' : 'block' }}
+        />
       </div>
     )
   }

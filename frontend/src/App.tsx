@@ -1,9 +1,12 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { useCartStore } from './store/cartStore'
 import GuestLayout from './layouts/GuestLayout'
 import UserLayout from './layouts/UserLayout'
 import AdminLayout from './layouts/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { initGlobalImageFix, fixExistingImages } from './utils/globalImageFix'
 
 // Pages
 import HomePage from './pages/HomePage'
@@ -21,6 +24,8 @@ import ProfilePage from './pages/ProfilePage'
 import CreateProductPage from './pages/CreateProductPage'
 import CheckoutPage from './pages/CheckoutPage'
 import OrderSuccessPage from './pages/OrderSuccessPage'
+import OrdersPage from './pages/OrdersPage'
+import OrderDetailPage from './pages/OrderDetailPage'
 import DashboardPage from './pages/user/DashboardPage'
 import MessagesPage from './pages/user/MessagesPage'
 import MyProductsPage from './pages/user/MyProductsPage'
@@ -29,82 +34,105 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
-  const { user } = useAuthStore()
+  const { user, checkAuth } = useAuthStore()
+  const { setCurrentUser } = useCartStore()
+
+  useEffect(() => {
+    checkAuth()
+    
+    // Initialize global image fix to handle problematic URLs
+    initGlobalImageFix()
+    
+    // Fix any existing images on the page
+    setTimeout(() => {
+      fixExistingImages()
+    }, 1000)
+  }, [checkAuth])
+
+  // Initialize cart with current user on app load
+  useEffect(() => {
+    const userId = user?.id || null
+    setCurrentUser(userId)
+  }, [user?.id, setCurrentUser])
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<GuestLayout />}>
-        <Route index element={<HomePage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/auctions" element={<AuctionsPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/search" element={<SearchPage />} />
-      </Route>
+    <div className="App">
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<GuestLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/auctions" element={<AuctionsPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/search" element={<SearchPage />} />
+        </Route>
 
-      {/* Auth routes - redirect to dashboard if already logged in */}
-      <Route path="/" element={<GuestLayout />}>
-        <Route 
-          path="/login" 
-          element={
-            <ProtectedRoute requireAuth={false}>
-              <LoginPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            <ProtectedRoute requireAuth={false}>
-              <RegisterPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-      </Route>
+        {/* Auth routes - redirect to dashboard if already logged in */}
+        <Route path="/" element={<GuestLayout />}>
+          <Route 
+            path="/login" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <LoginPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/register" 
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <RegisterPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+        </Route>
 
-      {/* Protected routes that require authentication but can be accessed by guests with redirect */}
-      <Route path="/" element={<GuestLayout />}>
-        <Route 
-          path="/checkout" 
-          element={
-            <ProtectedRoute requireAuth={true}>
-              <CheckoutPage />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/order-success" 
-          element={
-            <ProtectedRoute requireAuth={true}>
-              <OrderSuccessPage />
-            </ProtectedRoute>
-          } 
-        />
-      </Route>
+        {/* Protected routes that require authentication but can be accessed by guests with redirect */}
+        <Route path="/" element={<GuestLayout />}>
+          <Route 
+            path="/checkout" 
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <CheckoutPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/order-success" 
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <OrderSuccessPage />
+              </ProtectedRoute>
+            } 
+          />
+        </Route>
 
-      {/* Protected user routes */}
-      <Route path="/" element={<UserLayout />}>
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/sell" element={<CreateProductPage />} />
-        <Route path="/sell/edit/:id" element={<CreateProductPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/products/my" element={<MyProductsPage />} />
-        <Route path="/wallet" element={<WalletPage />} />
-      </Route>
+        {/* Protected user routes */}
+        <Route path="/" element={<UserLayout />}>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/sell" element={<CreateProductPage />} />
+          <Route path="/sell/edit/:id" element={<CreateProductPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/order/:id" element={<OrderDetailPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/products/my" element={<MyProductsPage />} />
+          <Route path="/wallet" element={<WalletPage />} />
+        </Route>
 
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-      </Route>
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+        </Route>
 
-      {/* Catch all */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Catch all */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </div>
   )
 }
 

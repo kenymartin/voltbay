@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { getSafeImageUrl } from '../utils/imageUtils'
 
 interface Product {
   id: string
@@ -133,32 +134,8 @@ export default function ProductCarousel({
 
   // Get fallback image for failed loads
   const getImageSrc = (product: Product) => {
-    if (imageErrors.has(product.id)) {
-      // Use more reliable fallback images with better URLs
-      const fallbackImages = [
-        'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3', // Solar panels
-        'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3', // Inverters
-        'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3', // Batteries
-        'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3', // Mounting systems
-        'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3', // Microinverters
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3'  // Controllers
-      ]
-      const index = parseInt(product.id.slice(-1)) || 0
-      return fallbackImages[index % fallbackImages.length]
-    }
-    
-    // Ensure the original image has proper format parameters and ixlib for better reliability
-    const originalImage = product.image
-    if (originalImage && originalImage.includes('unsplash.com')) {
-      // Add ixlib parameter for better Unsplash reliability
-      if (!originalImage.includes('ixlib=rb-4.0.3')) {
-        return originalImage.includes('?') 
-          ? `${originalImage}&ixlib=rb-4.0.3`
-          : `${originalImage}?ixlib=rb-4.0.3`
-      }
-    }
-    
-    return originalImage
+    // Use the new utility function to get safe image URL
+    return getSafeImageUrl(product.image, 'solar')
   }
 
   if (products.length === 0) {

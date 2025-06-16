@@ -47,21 +47,54 @@ class PaymentService {
   async initialize(): Promise<void> {
     try {
       // Get Stripe configuration from backend
-      const response = await apiService.get('/payments/config')
-      this.config = response.data.data
+      const response = await apiService.get('/api/payments/config')
+      this.config = response.data
 
       if (!this.config?.publicKey) {
         throw new Error('Stripe public key not found')
       }
 
-      // Load Stripe
-      this.stripe = await loadStripe(this.config.publicKey)
+      // Check if we're in a secure context (HTTPS or localhost)
+      const isSecureContext = window.isSecureContext || 
+                             window.location.protocol === 'https:' || 
+                             window.location.hostname === 'localhost' ||
+                             window.location.hostname === '127.0.0.1'
+
+      // In development, allow both HTTP and HTTPS
+      const isDevelopmentMode = process.env.NODE_ENV === 'development'
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+
+      // Load Stripe with development-friendly options
+      const stripeOptions: any = {
+        // Force Stripe to work in development with self-signed certs
+        ...(isDevelopmentMode && {
+          // These options help with development environments
+          locale: 'en'
+        })
+      }
+
+      this.stripe = await loadStripe(this.config.publicKey, stripeOptions)
       
       if (!this.stripe) {
         throw new Error('Failed to load Stripe')
       }
 
-      console.log('Stripe initialized successfully')
+      console.log('✅ Stripe initialized successfully')
+      
+      // Log connection security status
+      if (isSecureContext) {
+        console.log('🔒 Secure context detected - Stripe functionality available')
+        if (window.location.protocol === 'https:' && isLocalhost) {
+          console.log('🔧 Development HTTPS mode - Using self-signed certificate')
+        }
+      } else if (isDevelopmentMode && isLocalhost) {
+        console.log('🔧 Development HTTP mode - Limited Stripe functionality')
+        console.log('💡 Some features may be restricted. For full functionality, use HTTPS')
+      } else {
+        console.warn('⚠️ Insecure context detected - Some Stripe features may be limited')
+        console.log('💡 For full functionality, use HTTPS: https://localhost:3000')
+      }
+      
     } catch (error) {
       console.error('Error initializing Stripe:', error)
       throw error
@@ -81,18 +114,52 @@ class PaymentService {
   // Create payment intent for direct purchase
   async createPaymentIntent(data: PaymentIntentData): Promise<PaymentIntentResult> {
     try {
-      const response = await apiService.post('/payments/create-payment-intent', data)
-      return response.data.data
+      console.log('🔧 Creating payment intent with data:', data)
+      const response = await apiService.post('/api/payments/create-payment-intent', data)
+      console.log('🔧 Raw payment response:', response)
+      
+      // Handle different response structures
+      const result = response.data?.data || response.data || response
+      console.log('🔧 Extracted result:', result)
+      
+      if (!result) {
+        throw new Error('No payment intent data received from server')
+      }
+      
+      if (!result.paymentIntentId || !result.clientSecret || !result.orderId) {
+        console.error('🔧 Invalid payment intent structure:', result)
+        throw new Error('Invalid payment intent response structure')
+      }
+      
+      return result
     } catch (error: any) {
-      console.error('Error creating payment intent:', error)
-      throw new Error(error.response?.data?.error || 'Failed to create payment intent')
+      console.error('🔧 Error creating payment intent:', error)
+      console.error('🔧 Error response:', error.response?.data)
+      
+      // Handle authentication errors specifically
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in again.')
+      }
+      
+      // Handle validation errors
+      if (error.response?.status === 400) {
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Invalid request data'
+        throw new Error(errorMessage)
+      }
+      
+      // Handle server errors
+      if (error.response?.status >= 500) {
+        throw new Error('Server error. Please try again later.')
+      }
+      
+      throw new Error(error.response?.data?.error || error.message || 'Failed to create payment intent')
     }
   }
 
   // Process auction payment
   async processAuctionPayment(data: AuctionPaymentData): Promise<PaymentIntentResult> {
     try {
-      const response = await apiService.post('/payments/auction-payment', data)
+      const response = await apiService.post('/api/payments/auction-payment', data)
       return response.data.data
     } catch (error: any) {
       console.error('Error processing auction payment:', error)
@@ -103,7 +170,7 @@ class PaymentService {
   // Confirm payment after successful processing
   async confirmPayment(paymentIntentId: string): Promise<void> {
     try {
-      await apiService.post('/payments/confirm-payment', { paymentIntentId })
+      await apiService.post('/api/payments/confirm-payment', { paymentIntentId })
     } catch (error: any) {
       console.error('Error confirming payment:', error)
       throw new Error(error.response?.data?.error || 'Failed to confirm payment')
@@ -113,7 +180,7 @@ class PaymentService {
   // Get payment status
   async getPaymentStatus(paymentIntentId: string) {
     try {
-      const response = await apiService.get(`/payments/status/${paymentIntentId}`)
+      const response = await apiService.get(`/api/payments/status/${paymentIntentId}`)
       return response.data.data
     } catch (error: any) {
       console.error('Error getting payment status:', error)
@@ -124,7 +191,7 @@ class PaymentService {
   // Get auction payment status
   async getAuctionPaymentStatus(auctionId: string) {
     try {
-      const response = await apiService.get(`/payments/auction/${auctionId}/status`)
+      const response = await apiService.get(`/api/payments/auction/${auctionId}/status`)
       return response.data.data
     } catch (error: any) {
       console.error('Error getting auction payment status:', error)
@@ -135,7 +202,7 @@ class PaymentService {
   // Get user payment history
   async getPaymentHistory() {
     try {
-      const response = await apiService.get('/payments/history')
+      const response = await apiService.get('/api/payments/history')
       return response.data.data
     } catch (error: any) {
       console.error('Error getting payment history:', error)

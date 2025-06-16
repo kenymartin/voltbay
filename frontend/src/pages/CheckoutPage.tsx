@@ -5,6 +5,9 @@ import { useAuthStore } from '../store/authStore'
 import { CreditCard, MapPin, User, ShoppingBag, ArrowLeft, Lock } from 'lucide-react'
 import { toast } from 'react-toastify'
 import SEO from '../components/SEO'
+import PaymentForm from '../components/payment/PaymentForm'
+import type { PaymentIntentData } from '../services/paymentService'
+import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
 interface ShippingInfo {
   firstName: string
@@ -18,20 +21,13 @@ interface ShippingInfo {
   country: string
 }
 
-interface PaymentInfo {
-  cardNumber: string
-  expiryDate: string
-  cvv: string
-  nameOnCard: string
-}
-
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, getTotalPrice, clearCart } = useCartStore()
   const { user, isAuthenticated } = useAuthStore()
   
   const [currentStep, setCurrentStep] = useState(1)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [paymentData, setPaymentData] = useState<PaymentIntentData | null>(null)
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: user?.firstName || '',
@@ -44,13 +40,25 @@ export default function CheckoutPage() {
     zipCode: '',
     country: 'United States'
   })
-  
-  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    nameOnCard: ''
-  })
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please log in</h2>
+          <p className="text-gray-600 mb-6">You need to be logged in to checkout</p>
+          <button
+            onClick={() => navigate('/auth/login')}
+            className="btn btn-primary"
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Redirect if cart is empty
   if (items.length === 0) {
@@ -71,6 +79,9 @@ export default function CheckoutPage() {
     )
   }
 
+  // For now, we'll handle single product checkout (most common case)
+  // TODO: Implement multi-product checkout in the future
+  const firstItem = items[0]
   const subtotal = getTotalPrice()
   const shipping = 25.00 // Fixed shipping cost
   const tax = subtotal * 0.08 // 8% tax
@@ -94,42 +105,37 @@ export default function CheckoutPage() {
       toast.error('Please fill in all required fields')
       return
     }
-    
+
+    // Prepare payment data for the first item (single product checkout)
+    const paymentIntentData: PaymentIntentData = {
+      productId: firstItem.productId,
+      amount: total,
+      shippingAddress: {
+        street: shippingInfo.address,
+        city: shippingInfo.city,
+        state: shippingInfo.state,
+        zipCode: shippingInfo.zipCode,
+        country: shippingInfo.country
+      }
+    }
+
+    setPaymentData(paymentIntentData)
     setCurrentStep(2)
   }
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validate payment info
-    if (!paymentInfo.cardNumber || !paymentInfo.expiryDate || !paymentInfo.cvv || !paymentInfo.nameOnCard) {
-      toast.error('Please fill in all payment details')
-      return
-    }
-    
-    setIsProcessing(true)
-    
-    try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Clear cart and redirect to success
-      clearCart()
-      toast.success('Order placed successfully!')
-      navigate('/order-success')
-    } catch (error) {
-      toast.error('Payment failed. Please try again.')
-    } finally {
-      setIsProcessing(false)
-    }
+  const handlePaymentSuccess = (orderId: string) => {
+    // Clear cart and redirect to order detail
+    clearCart()
+    toast.success('Order placed successfully!')
+    navigate(`/order/${orderId}`)
+  }
+
+  const handlePaymentError = (error: string) => {
+    toast.error(error)
   }
 
   const updateShippingInfo = (field: keyof ShippingInfo, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }))
-  }
-
-  const updatePaymentInfo = (field: keyof PaymentInfo, value: string) => {
-    setPaymentInfo(prev => ({ ...prev, [field]: value }))
   }
 
   return (
@@ -201,6 +207,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Last Name *
@@ -215,35 +222,34 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        value={shippingInfo.email}
-                        onChange={(e) => updateShippingInfo('email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={shippingInfo.phone}
-                        onChange={(e) => updateShippingInfo('phone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={shippingInfo.email}
+                      onChange={(e) => updateShippingInfo('email', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Address *
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={shippingInfo.phone}
+                      onChange={(e) => updateShippingInfo('phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Street Address *
                     </label>
                     <input
                       type="text"
@@ -267,6 +273,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         State *
@@ -279,6 +286,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         ZIP Code *
@@ -305,109 +313,40 @@ export default function CheckoutPage() {
                     >
                       <option value="United States">United States</option>
                       <option value="Canada">Canada</option>
+                      <option value="Mexico">Mexico</option>
                     </select>
                   </div>
 
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      className="w-full btn btn-primary"
-                    >
-                      Continue to Payment
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-primary-600 text-white py-3 px-4 rounded-md hover:bg-primary-700 transition-colors font-medium"
+                  >
+                    Continue to Payment
+                  </button>
                 </form>
               </div>
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 2 && paymentData && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex items-center mb-6">
                   <CreditCard className="w-6 h-6 text-primary-600 mr-3" />
                   <h2 className="text-xl font-semibold">Payment Information</h2>
                 </div>
 
-                <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Card Number *
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentInfo.cardNumber}
-                      onChange={(e) => updatePaymentInfo('cardNumber', e.target.value)}
-                      placeholder="1234 5678 9012 3456"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    />
-                  </div>
+                <PaymentForm
+                  paymentData={paymentData}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Expiry Date *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.expiryDate}
-                        onChange={(e) => updatePaymentInfo('expiryDate', e.target.value)}
-                        placeholder="MM/YY"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        CVV *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentInfo.cvv}
-                        onChange={(e) => updatePaymentInfo('cvv', e.target.value)}
-                        placeholder="123"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name on Card *
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentInfo.nameOnCard}
-                      onChange={(e) => updatePaymentInfo('nameOnCard', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Lock className="w-4 h-4 mr-2" />
-                      Your payment information is encrypted and secure
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(1)}
-                      className="flex-1 btn btn-outline"
-                    >
-                      Back to Shipping
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isProcessing}
-                      className="flex-1 btn btn-primary"
-                    >
-                      {isProcessing ? 'Processing...' : `Place Order - ${formatPrice(total)}`}
-                    </button>
-                  </div>
-                </form>
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="mt-4 text-gray-600 hover:text-gray-900 flex items-center"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back to Shipping
+                </button>
               </div>
             )}
           </div>
@@ -418,33 +357,26 @@ export default function CheckoutPage() {
               <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
               
               {/* Cart Items */}
-              <div className="space-y-3 mb-4">
-                {items.map((item) => (
-                  <div key={item.productId} className="flex items-center space-x-3">
+              <div className="space-y-4 mb-6">
+                {items.map((item, index) => (
+                  <div key={`${item.productId}-${index}`} className="flex items-center space-x-3">
                     <img
-                      src={item.product.imageUrls?.[0] || 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=100&h=100&fit=crop'}
+                      src={getSafeImageUrls(item.product.imageUrls, item.product.category?.name)[0] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0NFY0NEgyMFYyMFoiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHBhdGggZD0iTTI4IDI4TDM2IDM2TDI4IDQ0IiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo='}
                       alt={item.product.title}
-                      className="w-12 h-12 object-cover rounded"
+                      className="w-16 h-16 object-cover rounded-md bg-gray-100"
+                      onError={(e) => handleImageError(e, item.product.category?.name)}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.product.title}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Qty: {item.quantity}
-                      </p>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{item.product.title}</h4>
+                      <p className="text-gray-600 text-sm">Qty: {item.quantity}</p>
+                      <p className="font-semibold text-sm">{formatPrice(item.price * item.quantity)}</p>
                     </div>
-                    <p className="text-sm font-medium">
-                      {formatPrice(item.price * item.quantity)}
-                    </p>
                   </div>
                 ))}
               </div>
 
-              <hr className="my-4" />
-
-              {/* Totals */}
-              <div className="space-y-2">
+              {/* Price Breakdown */}
+              <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(subtotal)}</span>
@@ -457,11 +389,16 @@ export default function CheckoutPage() {
                   <span>Tax</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
-                <hr className="my-2" />
-                <div className="flex justify-between text-lg font-semibold">
+                <div className="border-t pt-2 flex justify-between font-semibold">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>
+              </div>
+
+              {/* Security Badge */}
+              <div className="mt-6 flex items-center justify-center text-sm text-gray-600">
+                <Lock className="w-4 h-4 mr-2" />
+                <span>Secure SSL Encryption</span>
               </div>
             </div>
           </div>

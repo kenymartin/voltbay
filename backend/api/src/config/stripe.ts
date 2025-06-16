@@ -1,98 +1,21 @@
-// Temporary mock implementation without Stripe dependency
-// import Stripe from 'stripe'
+import Stripe from 'stripe'
 
-// Mock Stripe types and classes for development
-interface MockPaymentIntent {
-  id: string
-  amount: number
-  currency: string
-  status: 'requires_payment_method' | 'requires_confirmation' | 'requires_action' | 'processing' | 'requires_capture' | 'canceled' | 'succeeded'
-  client_secret: string
-  metadata?: Record<string, string>
-}
-
-interface MockCustomer {
-  id: string
-  email?: string
-  metadata?: Record<string, string>
-}
-
-class MockStripe {
-  paymentIntents = {
-    create: async (params: any): Promise<MockPaymentIntent> => {
-      console.log('Mock Stripe: Creating payment intent', params)
-      return {
-        id: `pi_mock_${Date.now()}`,
-        amount: params.amount,
-        currency: params.currency || 'usd',
-        status: 'requires_payment_method',
-        client_secret: `pi_mock_${Date.now()}_secret_mock`,
-        metadata: params.metadata
-      }
-    },
-    retrieve: async (id: string): Promise<MockPaymentIntent> => {
-      console.log('Mock Stripe: Retrieving payment intent', id)
-      return {
-        id,
-        amount: 1000,
-        currency: 'usd',
-        status: 'succeeded',
-        client_secret: `${id}_secret_mock`
-      }
-    },
-    confirm: async (id: string, params?: any): Promise<MockPaymentIntent> => {
-      console.log('Mock Stripe: Confirming payment intent', id, params)
-      return {
-        id,
-        amount: 1000,
-        currency: 'usd',
-        status: 'succeeded',
-        client_secret: `${id}_secret_mock`
-      }
-    }
-  }
-
-  customers = {
-    create: async (params: any): Promise<MockCustomer> => {
-      console.log('Mock Stripe: Creating customer', params)
-      return {
-        id: `cus_mock_${Date.now()}`,
-        email: params.email,
-        metadata: params.metadata
-      }
-    },
-    retrieve: async (id: string): Promise<MockCustomer> => {
-      console.log('Mock Stripe: Retrieving customer', id)
-      return {
-        id,
-        email: 'mock@example.com'
-      }
-    }
-  }
-
-  webhooks = {
-    constructEvent: (payload: any, signature: string, secret: string) => {
-      console.log('Mock Stripe: Constructing webhook event')
-      return {
-        id: `evt_mock_${Date.now()}`,
-        type: 'payment_intent.succeeded',
-        data: {
-          object: {
-            id: 'pi_mock_123',
-            status: 'succeeded'
-          }
-        }
-      }
-    }
-  }
-}
-
+// Check if we have Stripe keys
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('STRIPE_SECRET_KEY not found, using mock Stripe implementation')
+  throw new Error('STRIPE_SECRET_KEY is required')
 }
 
-// Initialize mock Stripe
-export const stripe = new MockStripe() as any
+if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+  throw new Error('STRIPE_PUBLISHABLE_KEY is required')
+}
+
+// Initialize real Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2022-11-15',
+  typescript: true,
+})
+
+console.log('✅ Stripe initialized with real API keys')
 
 // Stripe configuration constants
 export const STRIPE_CONFIG = {
@@ -114,6 +37,9 @@ export const STRIPE_CONFIG = {
   // Connect account onboarding
   CONNECT_REFRESH_URL: process.env.FRONTEND_URL + '/seller/onboarding/refresh',
   CONNECT_RETURN_URL: process.env.FRONTEND_URL + '/seller/onboarding/complete',
+  
+  // Publishable key for frontend
+  PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
 } as const
 
 // Stripe error handling helper

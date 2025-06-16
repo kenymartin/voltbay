@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
+import { useCartStore } from '../store/cartStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
 import type { Product, Bid, ApiResponse } from '../../../shared/types'
+import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuthStore()
+  const { addToCart, clearCart } = useCartStore()
   
   const [product, setProduct] = useState<Product | null>(null)
   const [bids, setBids] = useState<Bid[]>([])
@@ -113,15 +116,22 @@ export default function ProductDetailPage() {
       return
     }
 
+    if (!product) {
+      toast.error('Product not found')
+      return
+    }
+
     try {
-      await apiService.post(`/api/orders`, {
-        productId: id,
-        totalAmount: product?.buyNowPrice || product?.price
-      })
-      toast.success('Order placed successfully!')
-      navigate('/dashboard')
+      // Clear cart and add this product for immediate checkout
+      clearCart()
+      addToCart(product, 1)
+      
+      // Navigate to checkout
+      navigate('/checkout')
+      toast.success('Redirecting to checkout...')
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to place order')
+      toast.error('Failed to proceed to checkout')
+      console.error('Buy now error:', error)
     }
   }
 
@@ -199,9 +209,10 @@ export default function ProductDetailPage() {
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
             {product.imageUrls && product.imageUrls.length > 0 ? (
               <img
-                src={product.imageUrls[selectedImage]}
+                src={getSafeImageUrls(product.imageUrls, product.category?.name)[selectedImage]}
                 alt={product.title}
                 className="w-full h-full object-cover"
+                onError={(e) => handleImageError(e, product.category?.name)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-200">
@@ -212,7 +223,7 @@ export default function ProductDetailPage() {
           
           {product.imageUrls && product.imageUrls.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
-              {product.imageUrls.map((url, index) => (
+              {getSafeImageUrls(product.imageUrls, product.category?.name).map((url, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -224,6 +235,7 @@ export default function ProductDetailPage() {
                     src={url}
                     alt={`${product.title} ${index + 1}`}
                     className="w-full h-full object-cover"
+                    onError={(e) => handleImageError(e, product.category?.name)}
                   />
                 </button>
               ))}
@@ -299,24 +311,23 @@ export default function ProductDetailPage() {
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder={`Min: $${minimumBid}`}
+                    placeholder={`Min: $${product.minimumBid || product.currentBid || product.price}`}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min={minimumBid}
+                    min={product.minimumBid || product.currentBid || product.price}
                     step="0.01"
                   />
                   <button
                     onClick={handleBid}
-                    disabled={placingBid}
-                    className="btn btn-primary px-6"
+                    disabled={!bidAmount || parseFloat(bidAmount) < (product.minimumBid || product.currentBid || product.price)}
+                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    {placingBid ? 'Placing...' : 'Place Bid'}
+                    Place Bid
                   </button>
                 </div>
               </div>
             )}
 
-            {((product.buyNowPrice && product.isAuction) || !product.isAuction) && 
-             user?.id !== product.ownerId && (
+            {((product.buyNowPrice && product.isAuction) || !product.isAuction) && user?.id !== product.ownerId && (
               <button
                 onClick={handleBuyNow}
                 className="w-full btn btn-primary"
@@ -328,7 +339,7 @@ export default function ProductDetailPage() {
             {user?.id !== product.ownerId && (
               <button
                 onClick={sendMessage}
-                className="w-full btn btn-outline"
+                className="w-full btn btn-secondary"
               >
                 Message Seller
               </button>
