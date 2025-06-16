@@ -10,9 +10,10 @@ interface VerificationBannerProps {
 }
 
 export default function VerificationBanner({ context = 'general', onClose }: VerificationBannerProps) {
-  const { user } = useAuthStore()
+  const { user, refreshUserProfile } = useAuthStore()
   const [dismissed, setDismissed] = useState(false)
   const [resending, setResending] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Don't show if user is verified or banner is dismissed
   if (!user || user.verified || dismissed) {
@@ -36,6 +37,18 @@ export default function VerificationBanner({ context = 'general', onClose }: Ver
       toast.error(message)
     } finally {
       setResending(false)
+    }
+  }
+
+  const handleRefreshStatus = async () => {
+    setRefreshing(true)
+    try {
+      await refreshUserProfile()
+      toast.success('Status refreshed!')
+    } catch (error) {
+      toast.error('Failed to refresh status')
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -147,6 +160,15 @@ export default function VerificationBanner({ context = 'general', onClose }: Ver
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   {resending ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+                
+                <button
+                  onClick={handleRefreshStatus}
+                  disabled={refreshing}
+                  className="inline-flex items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {refreshing ? 'Checking...' : 'Check Status'}
                 </button>
                 
                 <button
