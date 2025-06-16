@@ -27,8 +27,11 @@ export default function ProtectedRoute({
     )
   }
 
-  // If requireAuth is false (for login/register pages) and user is authenticated, redirect to dashboard
+  // If requireAuth is false (for login/register pages) and user is authenticated, redirect appropriately
   if (!requireAuth && isAuthenticated) {
+    if (user?.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />
+    }
     return <Navigate to="/dashboard" replace />
   }
 

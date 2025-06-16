@@ -31,6 +31,7 @@ import MessagesPage from './pages/user/MessagesPage'
 import MyProductsPage from './pages/user/MyProductsPage'
 import WalletPage from './pages/WalletPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import CreateCategoryPage from './pages/admin/CreateCategoryPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -126,7 +127,9 @@ function App() {
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="categories/create" element={<CreateCategoryPage />} />
         </Route>
 
         {/* Catch all */}

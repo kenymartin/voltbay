@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Users, Package, TrendingUp, AlertTriangle, Eye, Ban, CheckCircle, XCircle, Edit, Trash2, Plus, Search } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../../services/api'
@@ -20,7 +20,8 @@ interface AdminStats {
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<TabType>('overview')
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState<TabType>((location.state as any)?.activeTab || 'overview')
   const [loading, setLoading] = useState(true)
   
   // Data states
@@ -225,7 +226,7 @@ export default function AdminDashboardPage() {
       <td className="px-6 py-4 whitespace-nowrap">
         <span className={`px-2 py-1 text-xs rounded ${
           product.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-          product.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+          product.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
           product.status === 'SUSPENDED' ? 'bg-red-100 text-red-800' :
           'bg-gray-100 text-gray-800'
         }`}>
@@ -244,7 +245,7 @@ export default function AdminDashboardPage() {
           >
             <Eye className="w-4 h-4" />
           </button>
-          {product.status === 'PENDING' && (
+          {product.status === 'DRAFT' && (
             <>
               <button
                 onClick={() => handleProductAction(product.id, 'approve')}
@@ -495,7 +496,7 @@ export default function AdminDashboardPage() {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Status</option>
-              <option value="PENDING">Pending</option>
+              <option value="DRAFT">Draft</option>
               <option value="ACTIVE">Active</option>
               <option value="SUSPENDED">Suspended</option>
               <option value="SOLD">Sold</option>

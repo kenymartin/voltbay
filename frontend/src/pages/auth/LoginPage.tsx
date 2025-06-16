@@ -65,8 +65,14 @@ export default function LoginPage() {
         // Update auth store
         login(response.data)
         
-        // Redirect to intended page or dashboard
-        navigate(from, { replace: true })
+        // Check if user is admin and redirect accordingly
+        const user = response.data.user
+        if (user.role === 'ADMIN') {
+          navigate('/admin', { replace: true })
+        } else {
+          // Redirect to intended page or dashboard
+          navigate(from, { replace: true })
+        }
       } else {
         setError({ message: response.message || 'Login failed' })
       }

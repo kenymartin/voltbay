@@ -19,6 +19,7 @@ import uploadRoutes from './routes/uploadRoutes'
 import paymentRoutes from './routes/payments'
 // import walletRoutes from './routes/walletRoutes'
 import walletRoutes from './routes/walletRoutes'
+import adminRoutes from './routes/adminRoutes'
 import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
@@ -79,6 +80,7 @@ app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/wallet', walletRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {

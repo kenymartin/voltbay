@@ -188,6 +188,15 @@ export default function Navbar() {
                       >
                         Profile
                       </Link>
+                      {user?.role === 'ADMIN' && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium text-purple-700"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <Link
                         to="/orders"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -334,6 +343,15 @@ export default function Navbar() {
                 >
                   Profile
                 </Link>
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium text-purple-700"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
