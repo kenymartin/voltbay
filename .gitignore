@@ -388,6 +388,10 @@ docs/build/
 # VoltBay specific generated files
 shared/dist/
 shared/build/
+shared/**/*.js
+shared/**/*.d.ts
+shared/**/*.js.map
+shared/**/*.d.ts.map
 
 # Email templates cache
 email-templates-cache/
