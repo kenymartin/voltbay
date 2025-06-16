@@ -43,7 +43,10 @@ export default function AdminDashboardPage() {
   // Search and filter states
   const [userSearch, setUserSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
+  const [orderSearch, setOrderSearch] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<string>('')
+  const [selectedUserStatus, setSelectedUserStatus] = useState<string>('')
+  const [selectedOrderStatus, setSelectedOrderStatus] = useState<string>('')
 
   useEffect(() => {
     fetchAdminData()
@@ -421,17 +424,36 @@ export default function AdminDashboardPage() {
   )
 
   const UsersTab = () => {
-    const filteredUsers = users.filter(user =>
-      user.firstName?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      user.lastName?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      user.email.toLowerCase().includes(userSearch.toLowerCase())
-    )
+    const filteredUsers = users.filter(user => {
+      const matchesSearch = user.firstName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                           user.lastName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                           user.email.toLowerCase().includes(userSearch.toLowerCase())
+      
+      const matchesStatus = !selectedUserStatus || 
+                           selectedUserStatus === 'verified' && user.verified ||
+                           selectedUserStatus === 'unverified' && !user.verified ||
+                           selectedUserStatus === user.role
+      
+      return matchesSearch && matchesStatus
+    })
 
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold">User Management</h2>
           <div className="flex space-x-4">
+            <select
+              value={selectedUserStatus}
+              onChange={(e) => setSelectedUserStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Users</option>
+              <option value="verified">Verified</option>
+              <option value="unverified">Unverified</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MODERATOR">Moderator</option>
+              <option value="USER">Regular User</option>
+            </select>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -593,76 +615,122 @@ export default function AdminDashboardPage() {
     </div>
   )
 
-  const OrdersTab = () => (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Order Management</h2>
+  const OrdersTab = () => {
+    const filteredOrders = orders.filter(order => {
+      const matchesSearch = order.product?.title.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.buyer?.firstName?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.buyer?.lastName?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.buyer?.email.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.seller?.firstName?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.seller?.lastName?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.seller?.email.toLowerCase().includes(orderSearch.toLowerCase()) ||
+                           order.id.toLowerCase().includes(orderSearch.toLowerCase())
+      
+      const matchesStatus = !selectedOrderStatus || order.status === selectedOrderStatus
+      
+      return matchesSearch && matchesStatus
+    })
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Order ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Product
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Buyer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Seller
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  #{order.id.slice(-8)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {order.product?.title}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {order.buyer?.firstName} {order.buyer?.lastName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {order.seller?.firstName} {order.seller?.lastName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                  ${order.totalAmount}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded ${
-                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                    order.status === 'SHIPPED' ? 'bg-purple-100 text-purple-800' :
-                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </td>
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold">Order Management</h2>
+          <div className="flex space-x-4">
+            <select
+              value={selectedOrderStatus}
+              onChange={(e) => setSelectedOrderStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Orders</option>
+              <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="REFUNDED">Refunded</option>
+            </select>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                placeholder="Search orders..."
+                className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Order ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Product
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Buyer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Seller
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    #{order.id.slice(-8)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.product?.title}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.buyer?.firstName} {order.buyer?.lastName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {order.seller?.firstName} {order.seller?.lastName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                    ${order.totalAmount}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded ${
+                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'SHIPPED' ? 'bg-purple-100 text-purple-800' :
+                      order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                      order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                      order.status === 'REFUNDED' ? 'bg-orange-100 text-orange-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: TrendingUp },

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../config/database'
+import { ProductStatus, OrderStatus } from '@prisma/client'
 import { logger } from '../utils/logger'
 import { AppError } from '../utils/errors'
 
@@ -31,13 +32,13 @@ export class AdminController {
         }),
         prisma.product.count({
           where: {
-            status: 'DRAFT'
+            status: ProductStatus.DRAFT
           }
         }),
         prisma.product.count({
           where: {
             isAuction: true,
-            status: 'ACTIVE',
+            status: ProductStatus.ACTIVE,
             auctionEndDate: {
               gt: new Date()
             }
@@ -48,7 +49,7 @@ export class AdminController {
       // Calculate total revenue from completed orders
       const revenueAgg = await prisma.order.aggregate({
         where: {
-          status: 'DELIVERED'
+          status: OrderStatus.DELIVERED
         },
         _sum: {
           platformFee: true
@@ -212,7 +213,7 @@ export class AdminController {
       await prisma.product.update({
         where: { id },
         data: {
-          status: 'ACTIVE',
+          status: ProductStatus.ACTIVE,
           updatedAt: new Date()
         }
       })
@@ -235,7 +236,7 @@ export class AdminController {
       await prisma.product.update({
         where: { id },
         data: {
-          status: 'SUSPENDED',
+          status: ProductStatus.SUSPENDED,
           updatedAt: new Date()
         }
       })
@@ -258,7 +259,7 @@ export class AdminController {
       await prisma.product.update({
         where: { id },
         data: {
-          status: 'SUSPENDED',
+          status: ProductStatus.SUSPENDED,
           updatedAt: new Date()
         }
       })
