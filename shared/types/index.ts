@@ -89,6 +89,7 @@ export interface Bid {
   id: string;
   userId: string;
   user?: User;
+  bidder?: User; // Alias for user for backward compatibility
   productId: string;
   product?: Product;
   amount: number;
@@ -107,7 +108,18 @@ export interface Order {
   status: OrderStatus;
   totalAmount: number;
   shippingAddress: Address;
+  // Individual shipping fields for backward compatibility
+  shippingStreet?: string;
+  shippingCity?: string;
+  shippingState?: string;
+  shippingZipCode?: string;
+  shippingCountry?: string;
   paymentMethod?: PaymentMethod;
+  // Individual payment fields for backward compatibility
+  paymentType?: string;
+  paymentLast4?: string;
+  paymentBrand?: string;
+  stripeFee?: number;
   trackingNumber?: string;
   notes?: string;
   createdAt: Date;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../../services/api'
@@ -12,7 +12,7 @@ interface ResetPasswordForm {
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const token = searchParams.get('token')
 
   const [form, setForm] = useState<ResetPasswordForm>({

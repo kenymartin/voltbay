@@ -1,6 +1,6 @@
 import apiService from './api'
-import { Wallet, WalletStats, WalletTransaction, TransactionType, TransactionStatus } from '../types/wallet'
-import type { ApiResponse } from '../../../shared/types'
+import { Wallet, WalletStats, WalletTransaction, TransactionType } from '../types/wallet'
+import type { ApiResponse } from '@shared/dist'
 
 export interface AddFundsData {
   amount: number

@@ -4,7 +4,7 @@ import { Package, ArrowRight, Grid, List, Search } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
-import type { Category, ApiResponse } from '../../../shared/types'
+import type { Category, ApiResponse } from '@shared/dist'
 
 export default function CategoriesPage() {
   const navigate = useNavigate()
@@ -52,9 +52,9 @@ export default function CategoriesPage() {
     }
   }
 
-  const handleCategoryClick = (categoryId: string) => {
-    navigate(`/products?category=${categoryId}`)
-  }
+  // const handleCategoryClick = (categoryId: string) => {
+  //   navigate(`/products?category=${categoryId}`)
+  // }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
@@ -79,10 +79,11 @@ export default function CategoriesPage() {
     )
   }
 
-  const parentCategories = categories.filter(cat => !cat.parentId)
-  const getChildCategories = (parentId: string) => 
-    categories.filter(cat => cat.parentId === parentId)
+  // const parentCategories = categories.filter(cat => !cat.parentId)
+  // const getChildCategories = (parentId: string) => 
+  //   categories.filter(cat => cat.parentId === parentId)
 
+  /*
   const CategoryCard = ({ category }: { category: Category }) => {
     const childCategories = getChildCategories(category.id)
     const productCount = (category as any)._count?.products || 0
@@ -153,7 +154,9 @@ export default function CategoriesPage() {
       </div>
     )
   }
+  */
 
+  /*
   const CategoryListItem = ({ category }: { category: Category }) => {
     const childCategories = getChildCategories(category.id)
     const productCount = (category as any)._count?.products || 0
@@ -222,6 +225,7 @@ export default function CategoriesPage() {
       </div>
     )
   }
+  */
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

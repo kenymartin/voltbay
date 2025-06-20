@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { CheckCircle, Package, Mail, ArrowRight } from 'lucide-react'
 import SEO from '../components/SEO'
 
 export default function OrderSuccessPage() {
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
 
   // Generate a mock order number
   const orderNumber = `VB${Date.now().toString().slice(-6)}`

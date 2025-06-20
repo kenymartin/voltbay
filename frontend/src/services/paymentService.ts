@@ -46,9 +46,9 @@ class PaymentService {
   // Initialize Stripe with public key
   async initialize(): Promise<void> {
     try {
-      // Get Stripe configuration from backend
+      // Get Stripe configuration from backend  
       const response = await apiService.get('/api/payments/config')
-      this.config = response.data
+      this.config = (response as any).data
 
       if (!this.config?.publicKey) {
         throw new Error('Stripe public key not found')
@@ -119,7 +119,7 @@ class PaymentService {
       console.log('🔧 Raw payment response:', response)
       
       // Handle different response structures
-      const result = response.data?.data || response.data || response
+      const result = (response as any).data?.data || (response as any).data || response
       console.log('🔧 Extracted result:', result)
       
       if (!result) {
@@ -160,7 +160,7 @@ class PaymentService {
   async processAuctionPayment(data: AuctionPaymentData): Promise<PaymentIntentResult> {
     try {
       const response = await apiService.post('/api/payments/auction-payment', data)
-      return response.data.data
+      return (response as any).data.data
     } catch (error: any) {
       console.error('Error processing auction payment:', error)
       throw new Error(error.response?.data?.error || 'Failed to process auction payment')
@@ -181,7 +181,7 @@ class PaymentService {
   async getPaymentStatus(paymentIntentId: string) {
     try {
       const response = await apiService.get(`/api/payments/status/${paymentIntentId}`)
-      return response.data.data
+      return (response as any).data.data
     } catch (error: any) {
       console.error('Error getting payment status:', error)
       throw new Error(error.response?.data?.error || 'Failed to get payment status')
@@ -192,7 +192,7 @@ class PaymentService {
   async getAuctionPaymentStatus(auctionId: string) {
     try {
       const response = await apiService.get(`/api/payments/auction/${auctionId}/status`)
-      return response.data.data
+      return (response as any).data.data
     } catch (error: any) {
       console.error('Error getting auction payment status:', error)
       throw new Error(error.response?.data?.error || 'Failed to get auction payment status')
@@ -203,7 +203,7 @@ class PaymentService {
   async getPaymentHistory() {
     try {
       const response = await apiService.get('/api/payments/history')
-      return response.data.data
+      return (response as any).data.data
     } catch (error: any) {
       console.error('Error getting payment history:', error)
       throw new Error(error.response?.data?.error || 'Failed to get payment history')

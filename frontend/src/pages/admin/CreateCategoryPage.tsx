@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Upload, X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../../services/api'
-import type { Category, ApiResponse } from '../../../../shared/types'
+import type { Category, ApiResponse } from '@shared/dist'
 
 export default function CreateCategoryPage() {
   const navigate = useNavigate()

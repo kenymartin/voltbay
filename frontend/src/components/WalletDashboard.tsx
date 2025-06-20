@@ -6,7 +6,7 @@ import AddFundsModal from './AddFundsModal'
 import TransferFundsModal from './TransferFundsModal'
 import TransactionHistory from './TransactionHistory'
 import VerificationBanner from './VerificationBanner'
-import { useAuthStore } from '../store/authStore'
+// import { useAuthStore } from '../store/authStore'
 
 interface WalletDashboardProps {
   className?: string

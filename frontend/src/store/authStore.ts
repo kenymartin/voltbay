@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User } from '../../../shared/types'
+import type { User } from '@shared/dist'
 
 export interface AuthResponse {
   user: User

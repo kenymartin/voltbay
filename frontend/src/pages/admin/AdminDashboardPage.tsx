@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Users, Package, TrendingUp, AlertTriangle, Eye, Ban, CheckCircle, XCircle, Edit, Trash2, Plus, Search } from 'lucide-react'
 import { toast } from 'react-toastify'
 import apiService from '../../services/api'
-import type { User, Product, Category, Order, ApiResponse } from '../../../../shared/types'
+import type { User, Product, Category, Order, ApiResponse } from '@shared/dist'
 
 type TabType = 'overview' | 'users' | 'products' | 'categories' | 'orders'
 

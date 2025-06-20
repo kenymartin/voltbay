@@ -19,7 +19,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const { getTotalItems, toggleCart, setCurrentUser } = useCartStore()
   const navigate = useNavigate()
   const profileMenuRef = useRef<HTMLDivElement>(null)

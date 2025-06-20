@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { 
   Package, 
@@ -11,13 +11,13 @@ import {
   X, 
   Info,
   Zap,
-  Minus
+  // Minus
 } from 'lucide-react'
-import { useAuthStore } from '../store/authStore'
+// import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
 import VerificationBanner from '../components/VerificationBanner'
-import type { Category, ProductCondition, ApiResponse } from '../../../shared/types'
+import type { Category, ProductCondition, ApiResponse } from '@shared/dist'
 
 interface ProductForm {
   title: string
@@ -56,13 +56,13 @@ interface ImageUpload {
 }
 
 export default function CreateProductPage() {
-  const { user } = useAuthStore()
+  // const { user } = useAuthStore()
   const navigate = useNavigate()
-  const { id: productId } = useParams()
-  const isEditing = !!productId
+  // const { id: productId } = useParams()
+  // const isEditing = !!productId
   
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false) // setLoading unused for now
   const [submitting, setSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'details' | 'location' | 'specs'>('basic')
   
@@ -240,9 +240,9 @@ export default function CreateProductPage() {
       
       // Remove empty fields
       if (!productData.isAuction) {
-        delete productData.auctionEndDate
-        delete productData.minimumBid
-        delete productData.buyNowPrice
+        delete (productData as any).auctionEndDate
+        delete (productData as any).minimumBid
+        delete (productData as any).buyNowPrice
       }
       
       const response = await apiService.post<ApiResponse<{ product: any }>>('/api/products', productData)

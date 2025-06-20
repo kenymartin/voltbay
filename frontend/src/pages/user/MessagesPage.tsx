@@ -4,7 +4,7 @@ import { Send, Search, ArrowLeft, Package, User, Clock } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../../store/authStore'
 import apiService from '../../services/api'
-import type { Message, User as UserType, Product, ApiResponse } from '../../../../shared/types'
+import type { Message, User as UserType, Product, ApiResponse } from '@shared/dist'
 
 interface Conversation {
   id: string
@@ -135,7 +135,7 @@ export default function MessagesPage() {
       setConversations(prev =>
         prev.map(conv =>
           conv.id === selectedConversation
-            ? { ...conv, lastMessage: message, updatedAt: message.sentAt }
+            ? { ...conv, lastMessage: message, updatedAt: new Date(message.sentAt).toISOString() }
             : conv
         )
       )

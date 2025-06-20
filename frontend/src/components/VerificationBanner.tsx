@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Mail, AlertTriangle, CheckCircle, Package, Gavel, Wallet } from 'lucide-react'
+import { X, Mail, CheckCircle, Package, Gavel, Wallet } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'

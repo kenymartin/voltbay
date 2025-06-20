@@ -5,6 +5,7 @@ import { PaymentService } from '../services/paymentService'
 import { AuctionPaymentService } from '../services/auctionPaymentService'
 import { authenticateUser } from '../middleware/auth'
 import stripe, { STRIPE_CONFIG } from '../config/stripe'
+import { UserRole } from '@shared'
 
 const router = express.Router()
 const prisma = new PrismaClient()
@@ -177,7 +178,7 @@ router.post('/auction/:auctionId/expire', authenticateUser, async (req, res) => 
       select: { role: true }
     })
 
-    if (user?.role !== 'ADMIN') {
+    if (!user || !user.role || user.role !== UserRole.ADMIN) {
       return res.status(403).json({
         success: false,
         error: 'Admin access required'

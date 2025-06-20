@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Product } from '../../../shared/types'
+import type { Product } from '@shared/dist'
 
 export interface CartItem {
   productId: string

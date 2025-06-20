@@ -33,7 +33,7 @@ export default function ProductCarousel({
   products, 
   autoPlay = true, 
   autoPlayInterval = 8000,
-  showDots = true,
+  // showDots = true, // unused parameter
   itemsPerView = { mobile: 1, tablet: 2, desktop: 4 }
 }: ProductCarouselProps) {
   const [isHovered, setIsHovered] = useState(false)
@@ -185,7 +185,7 @@ export default function ProductCarousel({
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                     onError={() => handleImageError(product.id)}
-                    onLoad={(e) => {
+                    onLoad={(_e) => {
                       // Remove from error set if image loads successfully after retry
                       if (imageErrors.has(product.id)) {
                         setImageErrors(prev => {

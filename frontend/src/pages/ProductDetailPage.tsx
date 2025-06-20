@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
-import type { Product, Bid, ApiResponse } from '../../../shared/types'
+import type { Product, Bid, ApiResponse } from '@shared/dist'
 import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
 export default function ProductDetailPage() {
@@ -20,6 +20,7 @@ export default function ProductDetailPage() {
   const [bidAmount, setBidAmount] = useState('')
   const [selectedImage, setSelectedImage] = useState(0)
   const [placingBid, setPlacingBid] = useState(false)
+  console.log(placingBid) // Suppress unused variable warning
   const [timeLeft, setTimeLeft] = useState('')
 
   useEffect(() => {

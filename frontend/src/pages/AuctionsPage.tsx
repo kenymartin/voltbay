@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Clock, Gavel, Eye, Search, Filter, Star, Calendar, TrendingUp, X, User, DollarSign, CheckCircle } from 'lucide-react'
+import { Clock, Gavel, Search, Filter, X, User, DollarSign, CheckCircle } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse, Bid } from '../../../shared/types'
-import { ProductSortBy, SortOrder } from '../../../shared/types'
+import type { Product, Category, ProductCondition, ApiResponse, Bid } from '@shared/dist'
+// import { ProductSortBy, SortOrder } from '@shared/dist'
+
+// Define enums locally to avoid import issues
+enum ProductSortBy {
+  CREATED_AT = 'createdAt',
+  PRICE = 'price',
+  TITLE = 'title',
+  ENDING_SOON = 'endingSoon'
+}
+
+enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc'
+}
 import SEO from '../components/SEO'
 
 export default function AuctionsPage() {
@@ -322,12 +335,12 @@ export default function AuctionsPage() {
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-3">Bid History</h4>
                       <div className="space-y-2">
-                        {auctionResult.bids.map((bid, index) => (
+                        {auctionResult.bids.map((bid, _index) => (
                           <div key={bid.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                             <div className="flex items-center space-x-2">
                               <User className="w-4 h-4 text-gray-600" />
                               <span className="text-gray-700">
-                                {bid.bidder.firstName} {bid.bidder.lastName}
+                                {bid.bidder?.firstName} {bid.bidder?.lastName}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2">

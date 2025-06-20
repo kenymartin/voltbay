@@ -6,7 +6,7 @@ interface SitemapUrl {
 }
 
 export const generateSitemap = (urls: SitemapUrl[]): string => {
-  const baseUrl = import.meta.env.VITE_FRONTEND_URL || 'https://voltbay.com'
+  const baseUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:3000'
   
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

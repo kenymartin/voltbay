@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ShoppingCart, Search, Filter, Grid, List, Star, MapPin, User } from 'lucide-react'
+import { ShoppingCart, Search, Filter, Grid, List, Star } from 'lucide-react'
 import apiService from '../services/api'
-import type { Product, Category, ProductCondition, ApiResponse, PaginatedResponse } from '../../../shared/types'
-import { ProductSortBy, SortOrder } from '../../../shared/types'
+import type { Product, Category, ProductCondition, ApiResponse } from '@shared/dist'
+// import { ProductSortBy, SortOrder } from '@shared/dist'
+
+// Define enums locally to avoid import issues
+enum ProductSortBy {
+  CREATED_AT = 'createdAt',
+  PRICE = 'price',
+  TITLE = 'title',
+  ENDING_SOON = 'endingSoon'
+}
+
+enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc'
+}
 import SEO from '../components/SEO'
 import AddToCartButton from '../components/AddToCartButton'
 import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'

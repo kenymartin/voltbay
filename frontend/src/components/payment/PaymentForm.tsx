@@ -5,7 +5,7 @@ import {
   CardElement,
   Elements
 } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
+// import { loadStripe } from '@stripe/stripe-js'
 import { toast } from 'react-toastify'
 import { paymentService, PaymentIntentData } from '../../services/paymentService'
 
@@ -28,13 +28,13 @@ const cardElementOptions = {
 }
 
 // Test card numbers for development
-const TEST_CARDS = {
-  visa: '4242424242424242',
-  visaDebit: '4000056655665556',
-  mastercard: '5555555555554444',
-  amex: '378282246310005',
-  declined: '4000000000000002'
-}
+// const TEST_CARDS = {
+//   visa: '4242424242424242',
+//   visaDebit: '4000056655665556',
+//   mastercard: '5555555555554444',
+//   amex: '378282246310005',
+//   declined: '4000000000000002'
+// }
 
 interface PaymentFormProps {
   paymentData: PaymentIntentData

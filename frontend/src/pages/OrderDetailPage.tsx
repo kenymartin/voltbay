@@ -8,8 +8,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Calendar,
-  DollarSign,
+  // Calendar,
+  // DollarSign,
   User,
   MapPin,
   CreditCard,
@@ -20,7 +20,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
-import type { Order, ApiResponse } from '../../../shared/types'
+import type { Order, ApiResponse } from '@shared/dist'
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()

@@ -20,7 +20,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
-import type { Order, ApiResponse } from '../../../shared/types'
+import type { Order, ApiResponse } from '@shared/dist'
 
 type OrderFilter = 'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
 type OrderType = 'all' | 'purchases' | 'sales'

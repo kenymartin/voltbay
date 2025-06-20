@@ -1,9 +1,9 @@
 import React from 'react'
-import { useAuthStore } from '../store/authStore'
+// import { useAuthStore } from '../store/authStore'
 import WalletDashboard from '../components/WalletDashboard'
 
 const WalletPage: React.FC = () => {
-  const { user } = useAuthStore()
+  // const { user } = useAuthStore()
 
   return (
     <div className="min-h-screen bg-gray-50">

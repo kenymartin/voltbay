@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Edit, Trash2, Eye, Package } from 'lucide-react'
 import { toast } from 'react-toastify'
-import { useAuthStore } from '../../store/authStore'
+// import { useAuthStore } from '../../store/authStore'
 import apiService from '../../services/api'
-import type { Product, PaginatedResponse } from '../../../../shared/types'
-import { ProductStatus } from '../../../../shared/types'
+import type { Product, PaginatedResponse } from '@shared/dist'
+// import { ProductStatus } from '@shared/dist'
+
+// Define enum locally to avoid import issues
+enum ProductStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  SOLD = 'SOLD',
+  EXPIRED = 'EXPIRED',
+  SUSPENDED = 'SUSPENDED'
+}
 import SEO from '../../components/SEO'
 
 export default function MyProductsPage() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  // const { user } = useAuthStore()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)

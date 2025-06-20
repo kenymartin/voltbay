@@ -5,7 +5,7 @@ import { User, Edit, Save, X, Camera, Mail, Phone, MapPin, ArrowLeft } from 'luc
 import { useAuthStore } from '../store/authStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
-import type { User as UserType, ApiResponse } from '../../../shared/types'
+import type { User as UserType, ApiResponse } from '@shared/dist'
 
 export default function ProfilePage() {
   const { user: authUser, setUser } = useAuthStore()

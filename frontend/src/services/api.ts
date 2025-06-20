@@ -10,15 +10,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   metadata?: { _skipAuthInterceptor?: boolean }
 }
 
-// Vite env type declaration
-declare global {
-  interface ImportMeta {
-    env: {
-      VITE_API_URL?: string
-      VITE_AUTH_URL?: string
-    }
-  }
-}
+// Environment variables are now defined in vite-env.d.ts
 
 class ApiService {
   private api: AxiosInstance

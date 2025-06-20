@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ShoppingCart, Check, Plus, Minus } from 'lucide-react'
 import { useCartStore } from '../store/cartStore'
 import { toast } from 'react-toastify'
-import type { Product } from '../../../shared/types'
+import type { Product } from '@shared/dist'
 
 interface AddToCartButtonProps {
   product: Product

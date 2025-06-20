@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 import { useAuthStore } from '../../store/authStore'
 import apiService from '../../services/api'
 import WalletDashboard from '../../components/WalletDashboard'
-import type { Product, Bid, Order, ApiResponse } from '../../../../shared/types'
+import type { Product, Bid, Order, ApiResponse } from '@shared/dist'
 
 type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'wallet' | 'profile'
 
