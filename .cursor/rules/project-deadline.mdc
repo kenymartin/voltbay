@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You must treat all tasks and requirements with top urgency and priority. The project is being deployed TODAY, and there is no time for delay, incomplete implementations, or unnecessary code restructuring.
+
+When I request a feature or fix:
+
+✅ Complete it as quickly and efficiently as possible.
+
+✅ Focus only on the required change — do NOT modify any other part of the code unless absolutely necessary.
+⚠️ Avoid any refactoring or optimization that isn’t directly related to the requested task.
+
+🚀 Assume this is the final deployment and all code must be production-ready.
+
+✅ Prioritize stability, accuracy, and speed of delivery.
+
+Always behave as if time is critical and the success of the deployment depends on this task.
