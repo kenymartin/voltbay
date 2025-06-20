@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import apiService from '../services/api'
 import SEO from '../components/SEO'
+import LoginModal from '../components/LoginModal'
 import type { Product, Bid, ApiResponse } from '@shared/dist'
 import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
 
@@ -22,6 +23,8 @@ export default function ProductDetailPage() {
   const [placingBid, setPlacingBid] = useState(false)
   console.log(placingBid) // Suppress unused variable warning
   const [timeLeft, setTimeLeft] = useState('')
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginContext, setLoginContext] = useState<{ action: string; message?: string } | undefined>()
 
   useEffect(() => {
     if (id) {
@@ -78,8 +81,8 @@ export default function ProductDetailPage() {
 
   const handleBid = async () => {
     if (!isAuthenticated) {
-      toast.error('Please login to place a bid')
-      navigate('/login')
+      setLoginContext({ action: 'bid' })
+      setShowLoginModal(true)
       return
     }
 
@@ -112,8 +115,8 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
-      toast.error('Please login to buy this product')
-      navigate('/login')
+      setLoginContext({ action: 'buy' })
+      setShowLoginModal(true)
       return
     }
 
@@ -138,11 +141,21 @@ export default function ProductDetailPage() {
 
   const sendMessage = () => {
     if (!isAuthenticated) {
-      toast.error('Please login to send a message')
-      navigate('/login')
+      setLoginContext({ action: 'message' })
+      setShowLoginModal(true)
       return
     }
     navigate(`/dashboard/messages?productId=${id}&sellerId=${product?.ownerId}`)
+  }
+
+  const handleLoginSuccess = () => {
+    // After successful login, retry the action based on context
+    if (loginContext?.action === 'buy') {
+      handleBuyNow()
+    } else if (loginContext?.action === 'message') {
+      sendMessage()
+    }
+    // For bidding, user will need to manually retry as we don't want to auto-submit
   }
 
   if (loading) {
@@ -439,6 +452,13 @@ export default function ProductDetailPage() {
           </div>
         </div>
       )}
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+        context={loginContext}
+      />
     </div>
   )
 } 

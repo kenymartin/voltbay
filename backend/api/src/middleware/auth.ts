@@ -72,4 +72,46 @@ export const authenticateUser = (req: AuthenticatedRequest, res: Response, next:
   }
 }
 
+// Alias for backward compatibility
+export const authenticateToken = authenticateUser
+
+// Optional authentication - sets user if token is present but doesn't fail if missing
+export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // No token provided, continue without user
+      return next()
+    }
+
+    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
+    
+    if (!process.env.JWT_SECRET) {
+      // Server config error, continue without user
+      return next()
+    }
+
+    try {
+      // Use temporary JWT verification
+      const decoded = verifyJWT(token, process.env.JWT_SECRET)
+      
+      req.user = {
+        id: decoded.id || decoded.userId,
+        email: decoded.email,
+        role: decoded.role || 'USER'
+      }
+    } catch (tokenError) {
+      // Invalid token, continue without user
+      console.warn('Optional auth token invalid:', tokenError)
+    }
+
+    next()
+  } catch (error) {
+    console.error('Optional authentication error:', error)
+    // Continue without user on any error
+    next()
+  }
+}
+
 export default authenticateUser 

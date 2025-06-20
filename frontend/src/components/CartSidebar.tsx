@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useCartStore } from '../store/cartStore'
+import { useAuthStore } from '../store/authStore'
 import { X, Plus, Minus, Trash2, ShoppingBag, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import LoginModal from './LoginModal'
 
 export default function CartSidebar() {
   const {
@@ -14,6 +17,8 @@ export default function CartSidebar() {
     getTotalPrice,
     getTotalItems
   } = useCartStore()
+  const { isAuthenticated } = useAuthStore()
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -39,6 +44,19 @@ export default function CartSidebar() {
       style: 'currency',
       currency: 'USD'
     }).format(price)
+  }
+
+  const handleCheckoutClick = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true)
+      return
+    }
+    closeCart()
+  }
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false)
+    closeCart()
   }
 
   return (
@@ -190,14 +208,24 @@ export default function CartSidebar() {
               </div>
 
               {/* Checkout Button */}
-              <Link
-                to="/checkout"
-                onClick={closeCart}
-                className="w-full btn btn-primary flex items-center justify-center space-x-2"
-              >
-                <CreditCard className="w-5 h-5" />
-                <span>Proceed to Checkout</span>
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/checkout"
+                  onClick={closeCart}
+                  className="w-full btn btn-primary flex items-center justify-center space-x-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>Proceed to Checkout</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={handleCheckoutClick}
+                  className="w-full btn btn-primary flex items-center justify-center space-x-2"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>Sign in to Checkout</span>
+                </button>
+              )}
 
               {/* Continue Shopping */}
               <Link
@@ -211,6 +239,13 @@ export default function CartSidebar() {
           )}
         </div>
       </div>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+        context={{ action: 'checkout' }}
+      />
     </>
   )
 } 

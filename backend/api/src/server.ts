@@ -20,6 +20,9 @@ import paymentRoutes from './routes/payments'
 // import walletRoutes from './routes/walletRoutes'
 import walletRoutes from './routes/walletRoutes'
 import adminRoutes from './routes/adminRoutes'
+import featureFlagsRoutes from './routes/featureFlags'
+import enterpriseRoutes from './routes/enterprise'
+import roiRoutes from './routes/roi'
 import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
@@ -81,6 +84,9 @@ app.use('/api/upload', uploadRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/wallet', walletRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/feature-flags', featureFlagsRoutes)
+app.use('/api/enterprise', enterpriseRoutes)
+app.use('/api/roi', roiRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -110,6 +116,9 @@ app.get('/', (req, res) => {
       upload: '/api/upload',
       payments: '/api/payments',
       wallet: '/api/wallet',
+      featureFlags: '/api/feature-flags',
+      enterprise: '/api/enterprise',
+      roi: '/api/roi',
       health: '/health'
     }
   })
