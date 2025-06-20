@@ -142,6 +142,58 @@ async function main() {
     }
   })
 
+  const buyer1 = await prisma.user.upsert({
+    where: { email: 'buyer1@example.com' },
+    update: {},
+    create: {
+      email: 'buyer1@example.com',
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
+      firstName: 'Mike',
+      lastName: 'Johnson',
+      role: 'USER',
+      verified: true
+    }
+  })
+
+  const buyer2 = await prisma.user.upsert({
+    where: { email: 'buyer2@example.com' },
+    update: {},
+    create: {
+      email: 'buyer2@example.com',
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
+      firstName: 'Lisa',
+      lastName: 'Davis',
+      role: 'USER',
+      verified: true
+    }
+  })
+
+  const bidder1 = await prisma.user.upsert({
+    where: { email: 'bidder1@example.com' },
+    update: {},
+    create: {
+      email: 'bidder1@example.com',
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
+      firstName: 'Alex',
+      lastName: 'Thompson',
+      role: 'USER',
+      verified: true
+    }
+  })
+
+  const bidder2 = await prisma.user.upsert({
+    where: { email: 'bidder2@example.com' },
+    update: {},
+    create: {
+      email: 'bidder2@example.com',
+      password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
+      firstName: 'Emma',
+      lastName: 'Wilson',
+      role: 'USER',
+      verified: true
+    }
+  })
+
   // Create sample products
   console.log('🛍️ Creating sample products...')
   
@@ -279,7 +331,7 @@ async function main() {
       isAuction: true,
       auctionEndDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       minimumBid: 120.00,
-      currentBid: 135.00,
+      currentBid: 140.00,
       buyNowPrice: 180.00,
       city: 'Miami',
       state: 'Florida',
@@ -324,6 +376,24 @@ async function main() {
 
   // Create some sample bids for auction items
   console.log('💰 Creating sample bids...')
+  
+  // Bids on Tesla Powerwall 2 (product2)
+  await prisma.bid.create({
+    data: {
+      amount: 7200.00,
+      productId: product2.id,
+      userId: bidder1.id
+    }
+  })
+
+  await prisma.bid.create({
+    data: {
+      amount: 7350.00,
+      productId: product2.id,
+      userId: bidder2.id
+    }
+  })
+
   await prisma.bid.create({
     data: {
       amount: 7500.00,
@@ -332,27 +402,48 @@ async function main() {
     }
   })
 
+  // Bids on MPPT Charge Controller (product5)
+  await prisma.bid.create({
+    data: {
+      amount: 125.00,
+      productId: product5.id,
+      userId: bidder1.id
+    }
+  })
+
   await prisma.bid.create({
     data: {
       amount: 135.00,
       productId: product5.id,
-      userId: adminUser.id
+      userId: bidder2.id
+    }
+  })
+
+  await prisma.bid.create({
+    data: {
+      amount: 140.00,
+      productId: product5.id,
+      userId: buyer1.id
     }
   })
 
   console.log('✅ Database seeded successfully!')
   console.log('📊 Created:')
   console.log('  - 5 main categories with subcategories')
-  console.log('  - 4 users (admin, test user, 2 sellers)')
+  console.log('  - 8 users (admin, test user, 2 sellers, 2 buyers, 2 bidders)')
   console.log('  - 6 products (2 auctions, 4 direct sales)')
   console.log('  - 25+ product specifications')
-  console.log('  - 2 sample bids')
+  console.log('  - 6 sample bids')
   console.log('')
   console.log('🔑 Test accounts:')
   console.log('  - Admin: admin@voltbay.com / password123')
   console.log('  - Test User: testuser@example.com / password123')
   console.log('  - Seller 1: seller1@example.com / password123')
   console.log('  - Seller 2: seller2@example.com / password123')
+  console.log('  - Buyer 1: buyer1@example.com / password123')
+  console.log('  - Buyer 2: buyer2@example.com / password123')
+  console.log('  - Bidder 1: bidder1@example.com / password123')
+  console.log('  - Bidder 2: bidder2@example.com / password123')
 }
 
 main()

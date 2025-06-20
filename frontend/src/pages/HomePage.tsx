@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Zap, Shield, TrendingUp, Star, ArrowRight } from 'lucide-react'
+import { Search, Zap, Shield, TrendingUp, ArrowRight } from 'lucide-react'
 import SEO from '../components/SEO'
 import ProductCarousel from '../components/ProductCarousel'
 import ProductCarouselSkeleton from '../components/ProductCarouselSkeleton'
 import apiService from '../services/api'
-import type { Product, ApiResponse } from '../../../shared/types'
+
+// Define types locally to avoid import issues
+interface Product {
+  id: string
+  title: string
+  price: number
+  imageUrls?: string[]
+  isAuction?: boolean
+  auctionEndDate?: string | Date
+  owner?: {
+    firstName?: string
+    lastName?: string
+  }
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  data?: T
+  message?: string
+}
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([])
@@ -15,25 +34,25 @@ export default function HomePage() {
     {
       name: 'Solar Panels',
       description: 'High-efficiency photovoltaic panels',
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       count: '1,234 products'
     },
     {
       name: 'Inverters',
       description: 'Power conversion systems',
-      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       count: '567 products'
     },
     {
       name: 'Batteries',
       description: 'Energy storage solutions',
-      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       count: '890 products'
     },
     {
       name: 'Mounting Systems',
       description: 'Installation hardware',
-      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1622541948011-8c8b76bb8b63?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       count: '345 products'
     }
   ]
@@ -45,7 +64,7 @@ export default function HomePage() {
       title: 'High-Efficiency 400W Solar Panel',
       price: 299.99,
       originalPrice: 349.99,
-      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.8,
       reviews: 124,
       seller: 'SolarTech Pro',
@@ -55,7 +74,7 @@ export default function HomePage() {
       id: '2',
       title: '5kW String Inverter - Premium Grade',
       price: 1299.99,
-      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.9,
       reviews: 89,
       seller: 'PowerSolutions',
@@ -66,7 +85,7 @@ export default function HomePage() {
       id: '3',
       title: 'Tesla Powerwall 2 - Like New',
       price: 8999.99,
-      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 5.0,
       reviews: 45,
       seller: 'EnergyHub',
@@ -77,7 +96,7 @@ export default function HomePage() {
       title: 'Complete Solar Kit 10kW System',
       price: 12999.99,
       originalPrice: 15999.99,
-      image: 'https://images.unsplash.com/photo-1515263487990-61b07816b924?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1622541948011-8c8b76bb8b63?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.7,
       reviews: 67,
       seller: 'SolarComplete',
@@ -87,7 +106,7 @@ export default function HomePage() {
       id: '5',
       title: 'Microinverter Set - 20 Units',
       price: 2499.99,
-      image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.6,
       reviews: 156,
       seller: 'MicroPower',
@@ -98,7 +117,7 @@ export default function HomePage() {
       title: 'Solar Charge Controller MPPT 60A',
       price: 189.99,
       originalPrice: 229.99,
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1593941707882-a5bac6861d75?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.5,
       reviews: 203,
       seller: 'ChargeMax',
@@ -109,7 +128,7 @@ export default function HomePage() {
       id: '7',
       title: 'Flexible Solar Panel 100W',
       price: 149.99,
-      image: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1564419434-d6b63c27fac5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.4,
       reviews: 89,
       seller: 'FlexSolar',
@@ -119,98 +138,11 @@ export default function HomePage() {
       id: '8',
       title: 'Solar Monitoring System Pro',
       price: 399.99,
-      image: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+      image: 'https://images.unsplash.com/photo-1471219743851-c4df8b6ee585?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
       rating: 4.8,
       reviews: 76,
       seller: 'MonitorTech',
       isAuction: false
-    },
-    {
-      id: '9',
-      title: 'Monocrystalline Solar Panel 320W',
-      price: 249.99,
-      originalPrice: 299.99,
-      image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.7,
-      reviews: 142,
-      seller: 'SolarMax',
-      isAuction: false
-    },
-    {
-      id: '10',
-      title: 'Grid-Tie Inverter 3000W',
-      price: 899.99,
-      image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.6,
-      reviews: 98,
-      seller: 'GridPower',
-      isAuction: true,
-      timeLeft: '3d 5h'
-    },
-    {
-      id: '11',
-      title: 'Lithium Battery Bank 48V 100Ah',
-      price: 3499.99,
-      originalPrice: 3999.99,
-      image: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.9,
-      reviews: 67,
-      seller: 'BatteryPro',
-      isAuction: false
-    },
-    {
-      id: '12',
-      title: 'Solar Panel Mounting Rails Kit',
-      price: 199.99,
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.5,
-      reviews: 234,
-      seller: 'MountTech',
-      isAuction: false
-    },
-    {
-      id: '13',
-      title: 'Portable Solar Generator 1500W',
-      price: 1299.99,
-      originalPrice: 1599.99,
-      image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.8,
-      reviews: 156,
-      seller: 'PortablePower',
-      isAuction: true,
-      timeLeft: '12h 30m'
-    },
-    {
-      id: '14',
-      title: 'Solar Water Heater Controller',
-      price: 89.99,
-      image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.4,
-      reviews: 87,
-      seller: 'HeatControl',
-      isAuction: false
-    },
-    {
-      id: '15',
-      title: 'Bifacial Solar Panel 450W',
-      price: 399.99,
-      originalPrice: 449.99,
-      image: 'https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.9,
-      reviews: 78,
-      seller: 'BifacialTech',
-      isAuction: false
-    },
-    {
-      id: '16',
-      title: 'Solar Combiner Box 6-String',
-      price: 159.99,
-      image: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
-      rating: 4.6,
-      reviews: 123,
-      seller: 'CombinerPro',
-      isAuction: true,
-      timeLeft: '2d 18h'
     }
   ]
 
@@ -222,7 +154,7 @@ export default function HomePage() {
     try {
       setLoading(true)
       // Try to fetch real products from API
-      const response = await apiService.get<ApiResponse<Product[]>>('/api/products/search?limit=16&status=ACTIVE')
+      const response = await apiService.get<ApiResponse<Product[]>>('/api/products/search?limit=8&status=ACTIVE')
       
       if (response.success && response.data) {
         // Handle nested response structure
@@ -234,7 +166,7 @@ export default function HomePage() {
             id: product.id,
             title: product.title,
             price: parseFloat(product.price.toString()),
-            image: product.imageUrls?.[0] || 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+            image: product.imageUrls?.[0] || 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
             rating: 4.5, // Default rating since we don't have reviews yet
             reviews: Math.floor(Math.random() * 200) + 10, // Random reviews for demo
             seller: product.owner?.firstName ? `${product.owner.firstName} ${product.owner.lastName}` : 'VoltBay Seller',

@@ -14,7 +14,7 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   src,
   alt,
   className = '',
-  fallbackSrc = 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?w=400&h=300&fit=crop&auto=format&q=80&ixlib=rb-4.0.3',
+  fallbackSrc = 'https://images.unsplash.com/photo-1516876437184-593fda40c7ce?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
   showIcon = true,
   iconClassName = 'w-8 h-8 text-gray-400'
 }) => {
