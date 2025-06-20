@@ -270,4 +270,10 @@ export enum NotificationType {
   ORDER_DELIVERED = 'ORDER_DELIVERED',
   MESSAGE_RECEIVED = 'MESSAGE_RECEIVED',
   REVIEW_RECEIVED = 'REVIEW_RECEIVED'
-} 
+}
+
+// Re-export enterprise types
+export * from './enterprise'
+
+// Export enterprise types - this includes ProjectType, MountingType, and ROI interfaces
+export * from './enterprise' 

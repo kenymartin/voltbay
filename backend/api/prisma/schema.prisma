@@ -14,6 +14,7 @@ enum UserRole {
   USER
   ADMIN
   MODERATOR
+  ENTERPRISE_VENDOR
 }
 
 enum ProductStatus {
@@ -110,6 +111,12 @@ model User {
   zipCode   String?
   country   String?
   
+  // Enterprise vendor fields
+  isEnterpriseVendor Boolean @default(false)
+  companyName        String?
+  locationCity       String?
+  locationState      String?
+  
   // Stripe fields
   stripeCustomerId String?  @unique
   stripeAccountId  String?  @unique // For sellers
@@ -128,6 +135,13 @@ model User {
   notifications    Notification[]
   payments         Payment[]
   wallet           Wallet?
+  
+  // Enterprise relations
+  enterpriseListings EnterpriseListing[] @relation("EnterpriseVendor")
+  quoteRequests     QuoteRequest[]      @relation("QuoteBuyer")
+  quoteResponses    QuoteResponse[]     @relation("QuoteVendor")
+  roiSimulations    ROISimulation[]     @relation("ROISimulations")
+  vendorProjects    VendorProject[]     @relation("VendorProjects")
   
   // Auth-related
   emailVerificationToken String?
@@ -163,6 +177,7 @@ model Category {
   
   // Relations
   products Product[]
+  enterpriseListings EnterpriseListing[]
   
   @@map("categories")
 }
@@ -410,4 +425,191 @@ model Escrow {
   updatedAt   DateTime          @updatedAt
   
   @@map("escrows")
+}
+
+// Enterprise Quote System Enums
+enum EnterpriseListingStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum QuoteRequestStatus {
+  PENDING
+  RESPONDED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum QuoteResponseStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ProjectType {
+  ROOFTOP
+  GROUND
+  UTILITY_SCALE
+  COMMERCIAL
+}
+
+enum MountingType {
+  FIXED
+  ADJUSTABLE
+  TRACKER
+  GROUND_MOUNT
+  ROOF_MOUNT
+}
+
+// Enterprise Listing Model
+model EnterpriseListing {
+  id          String                  @id @default(cuid())
+  name        String
+  description String
+  categoryId  String
+  category    Category                @relation(fields: [categoryId], references: [id])
+  vendorId    String
+  vendor      User                    @relation("EnterpriseVendor", fields: [vendorId], references: [id])
+  
+  // Specifications stored as JSON
+  specs       Json?
+  
+  // Location and delivery
+  location    String
+  deliveryTime String?  // e.g., "2-4 weeks"
+  
+  // Pricing
+  basePrice   Decimal?                @db.Decimal(10, 2)
+  priceUnit   String?                 // e.g., "per kW", "per panel", "per project"
+  
+  // Status
+  status      EnterpriseListingStatus @default(DRAFT)
+  quoteOnly   Boolean                 @default(true)
+  
+  // Images and documents
+  imageUrls   String[]
+  documentUrls String[]               // PDFs, spec sheets, etc.
+  
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  
+  // Relations
+  quoteRequests QuoteRequest[]
+  
+  @@map("enterprise_listings")
+}
+
+// Quote Request Model
+model QuoteRequest {
+  id               String             @id @default(cuid())
+  buyerCompanyId   String
+  buyer            User               @relation("QuoteBuyer", fields: [buyerCompanyId], references: [id])
+  listingId        String?
+  listing          EnterpriseListing? @relation(fields: [listingId], references: [id])
+  
+  // Request details
+  requestedQuantity Int
+  projectSpecs     Json?              // Project specifications as JSON
+  deliveryDeadline DateTime?
+  notes            String?
+  
+  // Project details for ROI calculation
+  projectType      ProjectType?
+  systemSizeKw     Decimal?           @db.Decimal(10, 2)
+  location         String?            // ZIP code or city
+  mountingType     MountingType?
+  budget           Decimal?           @db.Decimal(12, 2)
+  
+  status           QuoteRequestStatus @default(PENDING)
+  
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  expiresAt        DateTime?
+  
+  // Relations
+  responses        QuoteResponse[]
+  
+  @@map("quote_requests")
+}
+
+// Quote Response Model
+model QuoteResponse {
+  id                  String              @id @default(cuid())
+  quoteRequestId      String
+  quoteRequest        QuoteRequest        @relation(fields: [quoteRequestId], references: [id])
+  vendorId            String
+  vendor              User                @relation("QuoteVendor", fields: [vendorId], references: [id])
+  
+  // Response details
+  proposedTotalPrice  Decimal             @db.Decimal(12, 2)
+  deliveryEstimate    String?             // e.g., "4-6 weeks"
+  validUntil          DateTime?
+  
+  // Additional details
+  message             String?
+  pdfProposalUrl      String?             // Link to detailed PDF proposal
+  lineItems           Json?               // Detailed breakdown as JSON
+  
+  // Terms
+  paymentTerms        String?
+  warrantyTerms       String?
+  
+  status              QuoteResponseStatus @default(PENDING)
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  @@map("quote_responses")
+}
+
+// ROI Simulation Model (for storing user simulations)
+model ROISimulation {
+  id              String      @id @default(cuid())
+  userId          String?
+  user            User?       @relation("ROISimulations", fields: [userId], references: [id])
+  
+  // Input parameters
+  projectType     ProjectType
+  location        String      // ZIP code
+  systemSizeKw    Decimal     @db.Decimal(10, 2)
+  panelWattage    Int?
+  mountingType    MountingType
+  targetBudget    Decimal?    @db.Decimal(12, 2)
+  
+  // Calculated results
+  estimatedPanels Int
+  estimatedCost   Decimal     @db.Decimal(12, 2)
+  roiYears        Decimal     @db.Decimal(5, 2)
+  co2OffsetTons   Decimal     @db.Decimal(8, 2)
+  
+  // Additional calculations
+  installationTime String?
+  freightCost     Decimal?    @db.Decimal(10, 2)
+  energyProduction Decimal?   @db.Decimal(10, 2) // kWh/year
+  
+  createdAt       DateTime    @default(now())
+  
+  @@map("roi_simulations")
+}
+
+// Vendor Project Model (for tracking vendor project history)
+model VendorProject {
+  id          String    @id @default(cuid())
+  vendorId    String
+  vendor      User      @relation("VendorProjects", fields: [vendorId], references: [id])
+  title       String
+  description String?
+  status      String    // e.g. "completed", "in-progress", "cancelled"
+  projectType ProjectType?
+  systemSizeKw Decimal? @db.Decimal(10, 2)
+  location    String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("vendor_projects")
 } 

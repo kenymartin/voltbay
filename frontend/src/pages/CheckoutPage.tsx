@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../store/cartStore'
 import { useAuthStore } from '../store/authStore'
-import { CreditCard, MapPin, User, ShoppingBag, ArrowLeft, Lock } from 'lucide-react'
+import { CreditCard, MapPin, ShoppingBag, ArrowLeft, Lock } from 'lucide-react'
 import { toast } from 'react-toastify'
 import SEO from '../components/SEO'
+import LoginModal from '../components/LoginModal'
 import PaymentForm from '../components/payment/PaymentForm'
 import type { PaymentIntentData } from '../services/paymentService'
 import { getSafeImageUrls, handleImageError } from '../utils/imageUtils'
@@ -28,6 +29,7 @@ export default function CheckoutPage() {
   
   const [currentStep, setCurrentStep] = useState(1)
   const [paymentData, setPaymentData] = useState<PaymentIntentData | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(!isAuthenticated)
   
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     firstName: user?.firstName || '',
@@ -41,23 +43,9 @@ export default function CheckoutPage() {
     country: 'United States'
   })
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please log in</h2>
-          <p className="text-gray-600 mb-6">You need to be logged in to checkout</p>
-          <button
-            onClick={() => navigate('/auth/login')}
-            className="btn btn-primary"
-          >
-            Log In
-          </button>
-        </div>
-      </div>
-    )
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false)
+    // Continue with checkout process
   }
 
   // Redirect if cart is empty
@@ -404,6 +392,13 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => navigate('/')}
+        onSuccess={handleLoginSuccess}
+        context={{ action: 'checkout' }}
+      />
     </div>
   )
 } 

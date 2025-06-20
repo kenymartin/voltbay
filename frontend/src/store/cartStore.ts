@@ -82,18 +82,28 @@ export const useCartStore = create<CartStore>((set, get) => ({
     
     // If user changed, save current cart and load user-specific cart
     if (currentUserId !== userId) {
-      // Save current cart for the previous user
+      // Save current cart for the previous user (only if they were logged in)
       if (currentUserId !== null) {
         saveCartToStorage(currentUserId, get().items)
       }
       
-      // Load cart for the new user
-      const userItems = loadCartFromStorage(userId)
-      
-      set({ 
-        currentUserId: userId,
-        items: userItems
-      })
+      // If logging out (userId becomes null), clear the cart completely
+      if (userId === null && currentUserId !== null) {
+        set({ 
+          currentUserId: userId,
+          items: [] // Clear cart on logout
+        })
+        // Also clear any guest cart that might exist
+        clearCartFromStorage(null)
+      } else {
+        // Load cart for the new user (login or user switch)
+        const userItems = loadCartFromStorage(userId)
+        
+        set({ 
+          currentUserId: userId,
+          items: userItems
+        })
+      }
     }
   },
 

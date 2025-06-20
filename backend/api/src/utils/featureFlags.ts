@@ -8,14 +8,16 @@ export class FeatureFlags {
    * Check if Industrial Quote System is enabled
    */
   static get industrialQuotes(): boolean {
-    return process.env.ENABLE_INDUSTRIAL_QUOTES === 'true'
+    // Temporarily enabled for testing - will be controlled by env vars in production
+    return process.env.ENABLE_INDUSTRIAL_QUOTES === 'true' || process.env.NODE_ENV === 'development'
   }
 
   /**
    * Check if ROI Simulator is enabled
    */
   static get roiSimulator(): boolean {
-    return process.env.ENABLE_ROI_SIMULATOR === 'true'
+    // Temporarily enabled for testing - will be controlled by env vars in production
+    return process.env.ENABLE_ROI_SIMULATOR === 'true' || process.env.NODE_ENV === 'development'
   }
 
   /**

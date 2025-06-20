@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import apiService from '../services/api'
@@ -12,7 +12,9 @@ import {
   Heart,
   ShoppingCart,
   Bell,
-  Wallet
+  Wallet,
+  HardHat,
+  ArrowLeft
 } from 'lucide-react'
 
 export default function Navbar() {
@@ -22,7 +24,11 @@ export default function Navbar() {
   const { user, isAuthenticated } = useAuthStore()
   const { getTotalItems, toggleCart, setCurrentUser } = useCartStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const profileMenuRef = useRef<HTMLDivElement>(null)
+
+  // Check if we're in Enterprise mode
+  const isEnterpriseMode = location.pathname.startsWith('/enterprise') || location.pathname.startsWith('/roi')
 
   // Sync cart with current user
   useEffect(() => {
@@ -82,24 +88,67 @@ export default function Navbar() {
 
             {/* Main navigation */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                to="/products"
-                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-              >
-                Browse
-              </Link>
-              <Link
-                to="/auctions"
-                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-              >
-                Auctions
-              </Link>
-              <Link
-                to="/categories"
-                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-              >
-                Categories
-              </Link>
+              {!isEnterpriseMode ? (
+                <>
+                  <Link
+                    to="/products"
+                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Browse
+                  </Link>
+                  <Link
+                    to="/auctions"
+                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Auctions
+                  </Link>
+                  <Link
+                    to="/categories"
+                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                  >
+                    Categories
+                  </Link>
+                  <Link
+                    to="/enterprise"
+                    className="border-transparent text-sky-600 hover:border-sky-300 hover:text-sky-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
+                  >
+                    <HardHat className="h-4 w-4" />
+                    <span>Enterprise</span>
+                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/"
+                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to VoltBay</span>
+                  </Link>
+                  <Link
+                    to="/enterprise"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1 ${
+                      location.pathname === '/enterprise' 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    <HardHat className="h-4 w-4" />
+                    <span>Enterprise</span>
+                  </Link>
+                  <Link
+                    to="/roi-calculator"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      location.pathname === '/roi-calculator' 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    ROI Simulator
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -270,27 +319,74 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="sm:hidden">
           <div className="pt-2 pb-3 space-y-1">
-            <Link
-              to="/products"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Browse
-            </Link>
-            <Link
-              to="/auctions"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Auctions
-            </Link>
-            <Link
-              to="/categories"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Categories
-            </Link>
+            {!isEnterpriseMode ? (
+              <>
+                <Link
+                  to="/products"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Browse
+                </Link>
+                <Link
+                  to="/auctions"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Auctions
+                </Link>
+                <Link
+                  to="/categories"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Categories
+                </Link>
+                <Link
+                  to="/enterprise"
+                  className="flex items-center px-4 py-2 text-sm text-sky-600 hover:bg-gray-100 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <HardHat className="h-4 w-4 mr-2" />
+                  Enterprise
+                  <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold ml-auto">NEW</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/"
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to VoltBay
+                </Link>
+                <Link
+                  to="/enterprise"
+                  className={`flex items-center px-4 py-2 text-sm ${
+                    location.pathname === '/enterprise' 
+                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <HardHat className="h-4 w-4 mr-2" />
+                  Enterprise
+                </Link>
+                <Link
+                  to="/roi-calculator"
+                  className={`block px-4 py-2 text-sm ${
+                    location.pathname === '/roi-calculator' 
+                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  ROI Simulator
+                </Link>
+              </>
+            )}
             
             {/* Mobile search */}
             <div className="px-4 py-2">

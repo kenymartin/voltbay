@@ -20,6 +20,9 @@ import SearchPage from './pages/SearchPage'
 import AuctionsPage from './pages/AuctionsPage'
 import ProductsPage from './pages/ProductsPage'
 import CategoriesPage from './pages/CategoriesPage'
+import Enterprise from './pages/Enterprise'
+import VendorDetailPage from './pages/VendorDetailPage'
+import ROICalculator from './pages/ROICalculator'
 import ProfilePage from './pages/ProfilePage'
 import CreateProductPage from './pages/CreateProductPage'
 import CheckoutPage from './pages/CheckoutPage'
@@ -65,8 +68,11 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/auctions" element={<AuctionsPage />} />
+          <Route path="/enterprise" element={<Enterprise />} />
+          <Route path="/roi-calculator" element={<ROICalculator />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/enterprise/vendor/:vendorId" element={<VendorDetailPage />} />
         </Route>
 
         {/* Auth routes - redirect to dashboard if already logged in */}
