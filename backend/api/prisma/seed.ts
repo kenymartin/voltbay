@@ -111,7 +111,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Test',
       lastName: 'User',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })
@@ -124,7 +124,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'John',
       lastName: 'Seller',
-      role: 'USER',
+      role: 'VENDOR',
       verified: true
     }
   })
@@ -137,7 +137,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Sarah',
       lastName: 'Green',
-      role: 'USER',
+      role: 'VENDOR',
       verified: true
     }
   })
@@ -150,7 +150,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Mike',
       lastName: 'Johnson',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })
@@ -163,7 +163,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Lisa',
       lastName: 'Davis',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })
@@ -176,7 +176,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Alex',
       lastName: 'Thompson',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })
@@ -189,7 +189,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123
       firstName: 'Emma',
       lastName: 'Wilson',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })

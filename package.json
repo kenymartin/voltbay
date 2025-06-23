@@ -31,5 +31,9 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "@sentry/react": "^9.30.0",
+    "axios": "^1.10.0"
   }
 }

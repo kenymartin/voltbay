@@ -234,8 +234,6 @@ export const SolarNewsTicker: React.FC<SolarNewsTickerProps> = ({
                 '--scroll-duration': `${scrollSpeed}s`,
                 '--scroll-distance': `-${news.length * 600}px`
               } as React.CSSProperties}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
             >
               {doubledNews.map((item, index) => (
                 <NewsItemComponent key={`${item.id}-${index}`} item={item} index={index} />
@@ -246,8 +244,8 @@ export const SolarNewsTicker: React.FC<SolarNewsTickerProps> = ({
       </div>
 
       {/* CSS Animation */}
-      <style jsx>{`
-        @keyframes scroll {
+      <style>{`
+        @keyframes scroll-ticker {
           0% {
             transform: translateX(0);
           }
@@ -257,11 +255,7 @@ export const SolarNewsTicker: React.FC<SolarNewsTickerProps> = ({
         }
         
         .animate-scroll {
-          animation: scroll var(--scroll-duration) linear infinite;
-        }
-        
-        .animate-scroll:hover {
-          animation-play-state: paused;
+          animation: scroll-ticker var(--scroll-duration) linear infinite;
         }
       `}</style>
     </div>

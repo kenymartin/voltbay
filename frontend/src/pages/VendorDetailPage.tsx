@@ -138,19 +138,31 @@ export default function VendorDetailPage() {
     if (!newMessage.trim() || !user || !vendor) return
 
     try {
+      console.log('🚀 Sending message from VendorDetailPage:', {
+        receiverId: vendor.id,
+        content: newMessage.trim(),
+        messageType: 'GENERAL'
+      })
+
       const response = await apiService.post('/api/messages', {
         receiverId: vendor.id,
-        content: newMessage,
-        productId: null
+        content: newMessage.trim(),
+        messageType: 'GENERAL'
       }) as any
+
+      console.log('✅ Message sent successfully:', response)
 
       if (response.success) {
         setMessages([...messages, response.data])
         setNewMessage('')
         setShowMessageModal(false)
+        
+        // Navigate to messages page to see the conversation
+        window.location.href = `/messages?user=${vendor.id}`
       }
     } catch (err) {
       console.error('Error sending message:', err)
+      alert('Failed to send message. Please try again.')
     }
   }
 

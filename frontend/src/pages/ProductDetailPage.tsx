@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
       setShowLoginModal(true)
       return
     }
-    navigate(`/dashboard/messages?productId=${id}&sellerId=${product?.ownerId}`)
+    navigate(`/messages?productId=${id}&sellerId=${product?.ownerId}`)
   }
 
   const handleLoginSuccess = () => {

@@ -2,14 +2,16 @@ import React, { useState } from 'react'
 import { CostSimulator } from '../components/roi/CostSimulator'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
-import { Lock, Calculator, Users, TrendingUp } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Lock, Calculator, Users, TrendingUp, HardHat } from 'lucide-react'
+import { useNavigate, Navigate, Link } from 'react-router-dom'
 import apiService from '../services/api'
+import { getUserType } from '../utils/userPermissions'
 
 const ROICalculator: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const navigate = useNavigate()
+  const userType = getUserType(user)
 
   // Handle quote request from ROI calculator
   const handleQuoteRequest = async (roiData: any) => {
@@ -41,6 +43,35 @@ const ROICalculator: React.FC = () => {
     } catch (error) {
       console.error('Quote request error:', error)
       alert('Failed to create quote request. Please try again.')
+    }
+  }
+
+  // Role-based access control for authenticated users
+  if (isAuthenticated && user) {
+    // Only Enterprise Buyers should access ROI Calculator
+    if (userType === 'ENTERPRISE_VENDOR') {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto p-6">
+            <HardHat className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Enterprise Vendor Access</h2>
+            <p className="text-gray-600 mb-6">
+              The ROI Calculator is designed for enterprise buyers to evaluate solar projects. As an enterprise vendor, you can manage your services and respond to quote requests through your dashboard.
+            </p>
+            <Link 
+              to="/dashboard" 
+              className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Go to Vendor Dashboard
+            </Link>
+          </div>
+        </div>
+      )
+    }
+    
+    // Regular buyers and vendors should not access enterprise features
+    if (userType !== 'ENTERPRISE_BUYER') {
+      return <Navigate to="/" replace />
     }
   }
 

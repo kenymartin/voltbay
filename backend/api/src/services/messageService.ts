@@ -6,23 +6,61 @@ interface SendMessageData {
   senderId: string
   receiverId: string
   content: string
-  productId?: string
+  productId?: string | null
+  messageType?: 'GENERAL' | 'PRODUCT_INQUIRY' | 'QUOTE_DISCUSSION' | 'VENDOR_INQUIRY' | 'SUPPORT'
+  context?: {
+    quoteRequestId?: string | null
+    vendorId?: string | null
+    projectType?: string | null
+    urgency?: 'LOW' | 'MEDIUM' | 'HIGH'
+  }
+  attachments?: Array<{
+    filename: string
+    url: string
+    size: number
+    type: string
+  }> | null
 }
 
 interface MessageQuery {
   productId?: string
+  conversationId?: string
+  messageType?: string
   page: number
   limit: number
 }
 
 interface ConversationQuery {
+  type: 'ALL' | 'VENDOR' | 'CUSTOMER' | 'PRODUCT' | 'QUOTE'
+  status: 'ALL' | 'ACTIVE' | 'ARCHIVED'
   page: number
   limit: number
 }
 
+interface CreateConversationData {
+  initiatorId: string
+  participantId: string
+  subject: string
+  initialMessage: string
+  context: {
+    type: 'VENDOR_INQUIRY' | 'PRODUCT_INQUIRY' | 'QUOTE_DISCUSSION' | 'GENERAL'
+    productId?: string
+    quoteRequestId?: string
+    vendorId?: string
+  }
+}
+
 export class MessageService {
   async sendMessage(data: SendMessageData) {
-    const { senderId, receiverId, content, productId } = data
+    const { 
+      senderId, 
+      receiverId, 
+      content, 
+      productId, 
+      messageType = 'GENERAL',
+      context,
+      attachments
+    } = data
 
     // Validate receiver exists
     const receiver = await prisma.user.findUnique({
@@ -55,7 +93,10 @@ export class MessageService {
           senderId,
           receiverId,
           content,
-          productId
+          productId,
+          messageType,
+          context: context ? JSON.stringify(context) : null,
+          attachments: attachments ? JSON.stringify(attachments) : null
         },
         include: {
           sender: {
@@ -64,7 +105,9 @@ export class MessageService {
               email: true,
               firstName: true,
               lastName: true,
-              avatar: true
+              avatar: true,
+              isEnterprise: true,
+              companyName: true
             }
           },
           receiver: {
@@ -73,7 +116,9 @@ export class MessageService {
               email: true,
               firstName: true,
               lastName: true,
-              avatar: true
+              avatar: true,
+              isEnterprise: true,
+              companyName: true
             }
           },
           product: {
@@ -89,184 +134,204 @@ export class MessageService {
       })
 
       // Create notification for receiver
+      const notificationTitle = messageType === 'VENDOR_INQUIRY' ? 'New Vendor Inquiry' :
+                               messageType === 'PRODUCT_INQUIRY' ? 'Product Inquiry' :
+                               messageType === 'QUOTE_DISCUSSION' ? 'Quote Discussion' :
+                               'New Message'
+
       await tx.notification.create({
         data: {
           userId: receiverId,
           type: 'MESSAGE_RECEIVED',
-          title: 'New Message',
-          message: `You have a new message from ${receiver.firstName || receiver.email}`,
+          title: notificationTitle,
+          message: `You have a new message from ${newMessage.sender.firstName || newMessage.sender.email}`,
           data: {
             messageId: newMessage.id,
             senderId,
-            productId
+            productId,
+            messageType,
+            context
           }
         }
       })
 
-      return newMessage
+      return {
+        ...newMessage,
+        context: newMessage.context ? JSON.parse(newMessage.context) : null,
+        attachments: newMessage.attachments ? JSON.parse(newMessage.attachments) : null
+      }
     })
 
-    logger.info(`Message sent: ${message.id} from ${senderId} to ${receiverId}`)
+    logger.info(`Message sent: ${message.id} from ${senderId} to ${receiverId} (${messageType})`)
     return message
   }
 
-  async getConversations(userId: string, query: ConversationQuery) {
-    const { page, limit } = query
-    const skip = (page - 1) * limit
+  async createConversation(data: CreateConversationData) {
+    const { initiatorId, participantId, subject, initialMessage, context } = data
 
-    // Get unique conversations with latest message
-    const conversations = await prisma.$queryRaw`
-      SELECT DISTINCT ON (
-        CASE 
-          WHEN "senderId" = ${userId} THEN "receiverId"
-          ELSE "senderId"
-        END
-      )
-        CASE 
-          WHEN "senderId" = ${userId} THEN "receiverId"
-          ELSE "senderId"
-        END as "otherUserId",
-        "sentAt" as "lastMessageAt",
-        "content" as "lastMessage",
-        "isRead",
-        "productId"
-      FROM "messages"
-      WHERE "senderId" = ${userId} OR "receiverId" = ${userId}
-      ORDER BY 
-        CASE 
-          WHEN "senderId" = ${userId} THEN "receiverId"
-          ELSE "senderId"
-        END,
-        "sentAt" DESC
-      LIMIT ${limit}
-      OFFSET ${skip}
-    ` as any[]
+    // Validate users exist
+    await this.getUserById(initiatorId)
+    await this.getUserById(participantId)
 
-    // Get user details for each conversation
-    const conversationsWithUsers = await Promise.all(
-      conversations.map(async (conv) => {
-        const otherUser = await prisma.user.findUnique({
-          where: { id: conv.otherUserId },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatar: true
-          }
-        })
-
-        const product = conv.productId ? await prisma.product.findUnique({
-          where: { id: conv.productId },
-          select: {
-            id: true,
-            title: true,
-            imageUrls: true,
-            price: true,
-            status: true
-          }
-        }) : null
-
-        // Count unread messages from this user
-        const unreadCount = await prisma.message.count({
-          where: {
-            senderId: conv.otherUserId,
-            receiverId: userId,
-            isRead: false
-          }
-        })
-
-        return {
-          otherUser,
-          lastMessage: conv.lastMessage,
-          lastMessageAt: conv.lastMessageAt,
-          unreadCount,
-          product
-        }
-      })
-    )
-
-    const total = await prisma.$queryRaw`
-      SELECT COUNT(DISTINCT 
-        CASE 
-          WHEN "senderId" = ${userId} THEN "receiverId"
-          ELSE "senderId"
-        END
-      ) as count
-      FROM "messages"
-      WHERE "senderId" = ${userId} OR "receiverId" = ${userId}
-    ` as any[]
-
-    return {
-      conversations: conversationsWithUsers,
-      pagination: {
-        page,
-        limit,
-        total: Number(total[0]?.count || 0),
-        pages: Math.ceil(Number(total[0]?.count || 0) / limit)
+    // Map context type to ConversationType
+    const getConversationType = (contextType: string): string => {
+      switch (contextType) {
+        case 'VENDOR_INQUIRY':
+          return 'VENDOR_INQUIRY'
+        case 'PRODUCT_INQUIRY':
+          return 'PRODUCT_INQUIRY'
+        case 'QUOTE_DISCUSSION':
+          return 'QUOTE_DISCUSSION'
+        case 'GENERAL':
+        default:
+          return 'GENERAL'
       }
     }
+
+    const conversation = await prisma.$transaction(async (tx) => {
+      // Create conversation
+      const newConversation = await tx.conversation.create({
+        data: {
+          subject,
+          type: getConversationType(context.type) as any,
+          status: 'ACTIVE',
+          context: JSON.stringify(context),
+          participants: {
+            create: [
+              { userId: initiatorId, role: 'INITIATOR' },
+              { userId: participantId, role: 'PARTICIPANT' }
+            ]
+          }
+        },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true,
+                  isEnterprise: true,
+                  companyName: true
+                }
+              }
+            }
+          }
+        }
+      })
+
+      // Send initial message
+      await tx.message.create({
+        data: {
+          senderId: initiatorId,
+          receiverId: participantId,
+          content: initialMessage,
+          conversationId: newConversation.id,
+          messageType: context.type === 'VENDOR_INQUIRY' ? 'VENDOR_INQUIRY' : 
+                      context.type === 'PRODUCT_INQUIRY' ? 'PRODUCT_INQUIRY' :
+                      context.type === 'QUOTE_DISCUSSION' ? 'QUOTE_DISCUSSION' : 'GENERAL',
+          productId: context.productId,
+          context: JSON.stringify(context)
+        }
+      })
+
+      return {
+        ...newConversation,
+        context: newConversation.context ? JSON.parse(newConversation.context) : null
+      }
+    })
+
+    logger.info(`Conversation created: ${conversation.id} by ${initiatorId} with ${participantId}`)
+    return conversation
   }
 
-  async getMessages(userId: string, otherUserId: string, query: MessageQuery) {
-    const { productId, page, limit } = query
+  async getConversations(userId: string, query: ConversationQuery) {
+    const { type, status, page, limit } = query
     const skip = (page - 1) * limit
 
-    const where: any = {
-      OR: [
-        { senderId: userId, receiverId: otherUserId },
-        { senderId: otherUserId, receiverId: userId }
-      ]
+    const whereClause: any = {
+      participants: {
+        some: { userId }
+      }
     }
 
-    if (productId) {
-      where.productId = productId
+    if (status !== 'ALL') {
+      whereClause.status = status
     }
 
-    const [messages, total] = await Promise.all([
-      prisma.message.findMany({
-        where,
-        include: {
-          sender: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              avatar: true
-            }
-          },
-          receiver: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              avatar: true
-            }
-          },
-          product: {
-            select: {
-              id: true,
-              title: true,
-              imageUrls: true,
-              price: true,
-              status: true
+    if (type !== 'ALL') {
+      if (type === 'VENDOR') {
+        whereClause.type = { in: ['VENDOR_INQUIRY', 'QUOTE_DISCUSSION'] }
+      } else if (type === 'PRODUCT') {
+        whereClause.type = 'PRODUCT_INQUIRY'
+      } else if (type === 'QUOTE') {
+        whereClause.type = 'QUOTE_DISCUSSION'
+      }
+    }
+
+    const conversations = await prisma.conversation.findMany({
+      where: whereClause,
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+                isEnterprise: true,
+                companyName: true
+              }
             }
           }
         },
-        orderBy: { sentAt: 'desc' },
-        skip,
-        take: limit
-      }),
-      prisma.message.count({ where })
-    ])
+        messages: {
+          orderBy: { sentAt: 'desc' },
+          take: 1,
+          include: {
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            messages: {
+              where: {
+                receiverId: userId,
+                isRead: false
+              }
+            }
+          }
+        }
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit
+    })
 
-    // Mark messages from other user as read
-    await this.markMessagesAsRead(userId, otherUserId)
+    const total = await prisma.conversation.count({
+      where: whereClause
+    })
+
+    const formattedConversations = conversations.map(conv => ({
+      ...conv,
+      context: conv.context ? JSON.parse(conv.context) : null,
+      otherParticipant: conv.participants.find(p => p.userId !== userId)?.user,
+      lastMessage: conv.messages[0] || null,
+      unreadCount: conv._count.messages
+    }))
 
     return {
-      messages: messages.reverse(), // Reverse to show oldest first
+      conversations: formattedConversations,
       pagination: {
         page,
         limit,
@@ -276,19 +341,201 @@ export class MessageService {
     }
   }
 
-  async markMessagesAsRead(userId: string, otherUserId: string) {
+  async getConversationMessages(userId: string, conversationId: string, query: { page: number; limit: number }) {
+    const { page, limit } = query
+    const skip = (page - 1) * limit
+
+    // Verify user is participant in conversation
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participants: {
+          some: { userId }
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+                isEnterprise: true,
+                companyName: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!conversation) {
+      throw new AppError('Conversation not found or access denied', 404)
+    }
+
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isEnterprise: true,
+            companyName: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrls: true,
+            price: true,
+            status: true
+          }
+        }
+      },
+      orderBy: { sentAt: 'desc' },
+      skip,
+      take: limit
+    })
+
+    const total = await prisma.message.count({
+      where: { conversationId }
+    })
+
+    const formattedMessages = messages.map(msg => ({
+      ...msg,
+      context: msg.context ? JSON.parse(msg.context) : null,
+      attachments: msg.attachments ? JSON.parse(msg.attachments) : null
+    }))
+
+    return {
+      conversation: {
+        ...conversation,
+        context: conversation.context ? JSON.parse(conversation.context) : null
+      },
+      messages: formattedMessages,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    }
+  }
+
+  async getMessages(userId: string, otherUserId: string, query: MessageQuery) {
+    const { productId, page, limit } = query
+    const skip = (page - 1) * limit
+
+    const whereClause: any = {
+      OR: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId }
+      ]
+    }
+
+    if (productId) {
+      whereClause.productId = productId
+    }
+
+    const messages = await prisma.message.findMany({
+      where: whereClause,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isEnterprise: true,
+            companyName: true
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isEnterprise: true,
+            companyName: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrls: true,
+            price: true,
+            status: true
+          }
+        }
+      },
+      orderBy: { sentAt: 'desc' },
+      skip,
+      take: limit
+    })
+
+    const total = await prisma.message.count({
+      where: whereClause
+    })
+
+    const formattedMessages = messages.map(msg => ({
+      ...msg,
+      context: msg.context ? JSON.parse(msg.context) : null,
+      attachments: msg.attachments ? JSON.parse(msg.attachments) : null
+    }))
+
+    return {
+      messages: formattedMessages,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    }
+  }
+
+  async markMessagesAsRead(userId: string, messageIds: string[]) {
     await prisma.message.updateMany({
       where: {
-        senderId: otherUserId,
+        id: { in: messageIds },
         receiverId: userId,
         isRead: false
       },
       data: {
-        isRead: true
+        isRead: true,
+        readAt: new Date()
       }
     })
 
-    logger.info(`Messages marked as read for user ${userId} from ${otherUserId}`)
+    logger.info(`Messages marked as read: ${messageIds.length} messages for user: ${userId}`)
+  }
+
+  async markConversationAsRead(userId: string, conversationId: string) {
+    await prisma.message.updateMany({
+      where: {
+        conversationId,
+        receiverId: userId,
+        isRead: false
+      },
+      data: {
+        isRead: true,
+        readAt: new Date()
+      }
+    })
+
+    logger.info(`Conversation marked as read: ${conversationId} for user: ${userId}`)
   }
 
   async getUnreadCount(userId: string) {
@@ -302,7 +549,147 @@ export class MessageService {
     return count
   }
 
-  async deleteMessage(messageId: string, userId: string) {
+  async getMessageById(userId: string, messageId: string) {
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isEnterprise: true,
+            companyName: true
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isEnterprise: true,
+            companyName: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrls: true,
+            price: true,
+            status: true
+          }
+        }
+      }
+    })
+
+    if (!message) {
+      throw new AppError('Message not found', 404)
+    }
+
+    // Check if user is authorized to view this message
+    if (message.senderId !== userId && message.receiverId !== userId) {
+      throw new AppError('Access denied', 403)
+    }
+
+    return {
+      ...message,
+      context: message.context ? JSON.parse(message.context) : null,
+      attachments: message.attachments ? JSON.parse(message.attachments) : null
+    }
+  }
+
+  async getVendorInquiries(vendorId: string, query: { page: number; limit: number; status: string }) {
+    const { page, limit, status } = query
+    const skip = (page - 1) * limit
+
+    const whereClause: any = {
+      receiverId: vendorId,
+      messageType: { in: ['VENDOR_INQUIRY', 'QUOTE_DISCUSSION'] }
+    }
+
+    if (status === 'UNREAD') {
+      whereClause.isRead = false
+    } else if (status === 'READ') {
+      whereClause.isRead = true
+    }
+
+    const inquiries = await prisma.message.findMany({
+      where: whereClause,
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            companyName: true
+          }
+        },
+        product: {
+          select: {
+            id: true,
+            title: true,
+            imageUrls: true,
+            price: true
+          }
+        }
+      },
+      orderBy: { sentAt: 'desc' },
+      skip,
+      take: limit
+    })
+
+    const total = await prisma.message.count({
+      where: whereClause
+    })
+
+    const formattedInquiries = inquiries.map(inquiry => ({
+      ...inquiry,
+      context: inquiry.context ? JSON.parse(inquiry.context) : null,
+      attachments: inquiry.attachments ? JSON.parse(inquiry.attachments) : null
+    }))
+
+    return {
+      inquiries: formattedInquiries,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    }
+  }
+
+  async archiveConversation(userId: string, conversationId: string) {
+    // Verify user is participant
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participants: {
+          some: { userId }
+        }
+      }
+    })
+
+    if (!conversation) {
+      throw new AppError('Conversation not found or access denied', 404)
+    }
+
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'ARCHIVED' }
+    })
+
+    logger.info(`Conversation archived: ${conversationId} by user: ${userId}`)
+  }
+
+  async deleteMessage(userId: string, messageId: string) {
     const message = await prisma.message.findUnique({
       where: { id: messageId }
     })
@@ -312,13 +699,28 @@ export class MessageService {
     }
 
     if (message.senderId !== userId) {
-      throw new AppError('Can only delete your own messages', 403)
+      throw new AppError('You can only delete your own messages', 403)
     }
 
     await prisma.message.delete({
       where: { id: messageId }
     })
 
-    logger.info(`Message deleted: ${messageId} by user ${userId}`)
+    logger.info(`Message deleted: ${messageId} by user: ${userId}`)
+  }
+
+  async getUserById(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isEnterprise: true,
+        companyName: true
+      }
+    })
   }
 } 

@@ -68,8 +68,6 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/auctions" element={<AuctionsPage />} />
-          <Route path="/enterprise" element={<Enterprise />} />
-          <Route path="/roi-calculator" element={<ROICalculator />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/enterprise/vendor/:vendorId" element={<VendorDetailPage />} />
@@ -120,6 +118,8 @@ function App() {
 
         {/* Protected user routes */}
         <Route path="/" element={<UserLayout />}>
+          <Route path="/enterprise" element={<Enterprise />} />
+          <Route path="/roi-calculator" element={<ROICalculator />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/sell" element={<CreateProductPage />} />
           <Route path="/sell/edit/:id" element={<CreateProductPage />} />

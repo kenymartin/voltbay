@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,11 +7,445 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                         String                    @id @default(cuid())
+  email                      String                    @unique
+  password                   String
+  firstName                  String?
+  lastName                   String?
+  role                       UserRole                  @default(BUYER)
+  verified                   Boolean                   @default(false)
+  avatar                     String?
+  phone                      String?
+  street                     String?
+  city                       String?
+  state                      String?
+  zipCode                    String?
+  country                    String?
+  stripeCustomerId           String?                   @unique
+  stripeAccountId            String?                   @unique
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+  emailVerificationToken     String?
+  emailVerificationExpires   DateTime?
+  passwordResetToken         String?
+  passwordResetExpires       DateTime?
+  companyName                String?
+  isEnterprise               Boolean                   @default(false)
+  locationCity               String?
+  locationState              String?
+  businessLicense            String?
+  certifications             String[]
+  specialties                String[]
+  bids                       Bid[]
+  conversationsAsParticipant ConversationParticipant[]
+  enterpriseListings         EnterpriseListing[]       @relation("EnterpriseVendor")
+  receivedMessages           Message[]                 @relation("ReceivedMessages")
+  sentMessages               Message[]                 @relation("SentMessages")
+  notifications              Notification[]
+  ordersAsBuyer              Order[]                   @relation("BuyerOrders")
+  ordersAsSeller             Order[]                   @relation("SellerOrders")
+  payments                   Payment[]
+  products                   Product[]
+  quoteRequests              QuoteRequest[]            @relation("QuoteBuyer")
+  quoteResponses             QuoteResponse[]           @relation("QuoteVendor")
+  refreshTokens              RefreshToken[]
+  reviews                    Review[]
+  roiSimulations             ROISimulation[]           @relation("ROISimulations")
+  vendorProjects             VendorProject[]           @relation("VendorProjects")
+  wallet                     Wallet?
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id                 String              @id @default(cuid())
+  name               String              @unique
+  description        String?
+  parentId           String?
+  imageUrl           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  parent             Category?           @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children           Category[]          @relation("CategoryHierarchy")
+  enterpriseListings EnterpriseListing[]
+  products           Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String
+  price          Decimal                @db.Decimal(10, 2)
+  imageUrls      String[]
+  status         ProductStatus          @default(DRAFT)
+  condition      ProductCondition
+  categoryId     String
+  ownerId        String
+  isAuction      Boolean                @default(false)
+  auctionEndDate DateTime?
+  currentBid     Decimal?               @db.Decimal(10, 2)
+  minimumBid     Decimal?               @db.Decimal(10, 2)
+  buyNowPrice    Decimal?               @db.Decimal(10, 2)
+  street         String?
+  city           String?
+  state          String?
+  zipCode        String?
+  country        String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  bids           Bid[]
+  conversations  Conversation[]
+  messages       Message[]
+  orders         Order[]
+  specifications ProductSpecification[]
+  category       Category               @relation(fields: [categoryId], references: [id])
+  owner          User                   @relation(fields: [ownerId], references: [id])
+  reviews        Review[]
+
+  @@map("products")
+}
+
+model ProductSpecification {
+  id        String  @id @default(cuid())
+  productId String
+  name      String
+  value     String
+  unit      String?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_specifications")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  amount    Decimal  @db.Decimal(10, 2)
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("bids")
+}
+
+model Order {
+  id                    String       @id @default(cuid())
+  buyerId               String
+  sellerId              String
+  productId             String
+  status                OrderStatus  @default(PENDING)
+  totalAmount           Decimal      @db.Decimal(10, 2)
+  shippingStreet        String
+  shippingCity          String
+  shippingState         String
+  shippingZipCode       String
+  shippingCountry       String
+  paymentType           PaymentType?
+  paymentLast4          String?
+  paymentExpiryMonth    Int?
+  paymentExpiryYear     Int?
+  paymentBrand          String?
+  stripePaymentIntentId String?      @unique
+  stripeFee             Decimal?     @db.Decimal(10, 2)
+  platformFee           Decimal?     @db.Decimal(10, 2)
+  sellerAmount          Decimal?     @db.Decimal(10, 2)
+  trackingNumber        String?
+  notes                 String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  buyer                 User         @relation("BuyerOrders", fields: [buyerId], references: [id])
+  product               Product      @relation(fields: [productId], references: [id])
+  seller                User         @relation("SellerOrders", fields: [sellerId], references: [id])
+  payments              Payment[]
+  reviews               Review[]
+
+  @@map("orders")
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  senderId       String
+  receiverId     String
+  content        String
+  isRead         Boolean       @default(false)
+  productId      String?
+  sentAt         DateTime      @default(now())
+  attachments    String?
+  context        String?
+  conversationId String?
+  messageType    MessageType   @default(GENERAL)
+  readAt         DateTime?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  product        Product?      @relation(fields: [productId], references: [id])
+  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @db.SmallInt
+  comment   String?
+  productId String
+  authorId  String
+  orderId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  userId                String
+  orderId               String?
+  stripePaymentIntentId String        @unique
+  stripeChargeId        String?
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("usd")
+  status                PaymentStatus
+  description           String?
+  metadata              Json?
+  paymentMethodType     String?
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+  stripeFee             Decimal?      @db.Decimal(10, 2)
+  platformFee           Decimal?      @db.Decimal(10, 2)
+  netAmount             Decimal?      @db.Decimal(10, 2)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  paidAt                DateTime?
+  refundedAt            DateTime?
+  order                 Order?        @relation(fields: [orderId], references: [id])
+  user                  User          @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Wallet {
+  id            String              @id @default(cuid())
+  userId        String              @unique
+  balance       Decimal             @default(0.00) @db.Decimal(10, 2)
+  lockedBalance Decimal             @default(0.00) @db.Decimal(10, 2)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  escrows       Escrow[]
+  transactions  WalletTransaction[]
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String            @id @default(cuid())
+  walletId    String
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  status      TransactionStatus @default(PENDING)
+  description String
+  reference   String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@map("wallet_transactions")
+}
+
+model Escrow {
+  id            String            @id @default(cuid())
+  orderId       String            @unique
+  buyerWalletId String
+  sellerId      String
+  amount        Decimal           @db.Decimal(10, 2)
+  status        TransactionStatus @default(PENDING)
+  reason        String?
+  releasedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  buyerWallet   Wallet            @relation(fields: [buyerWalletId], references: [id])
+
+  @@map("escrows")
+}
+
+model EnterpriseListing {
+  id            String                  @id @default(cuid())
+  name          String
+  description   String
+  categoryId    String
+  vendorId      String
+  specs         Json?
+  location      String
+  deliveryTime  String?
+  basePrice     Decimal?                @db.Decimal(10, 2)
+  priceUnit     String?
+  status        EnterpriseListingStatus @default(DRAFT)
+  quoteOnly     Boolean                 @default(true)
+  imageUrls     String[]
+  documentUrls  String[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  category      Category                @relation(fields: [categoryId], references: [id])
+  vendor        User                    @relation("EnterpriseVendor", fields: [vendorId], references: [id])
+  quoteRequests QuoteRequest[]
+
+  @@map("enterprise_listings")
+}
+
+model QuoteRequest {
+  id                String             @id @default(cuid())
+  buyerCompanyId    String
+  listingId         String?
+  requestedQuantity Int
+  projectSpecs      Json?
+  deliveryDeadline  DateTime?
+  notes             String?
+  projectType       ProjectType?
+  systemSizeKw      Decimal?           @db.Decimal(10, 2)
+  location          String?
+  mountingType      MountingType?
+  budget            Decimal?           @db.Decimal(12, 2)
+  status            QuoteRequestStatus @default(PENDING)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  expiresAt         DateTime?
+  buyer             User               @relation("QuoteBuyer", fields: [buyerCompanyId], references: [id])
+  listing           EnterpriseListing? @relation(fields: [listingId], references: [id])
+  responses         QuoteResponse[]
+
+  @@map("quote_requests")
+}
+
+model QuoteResponse {
+  id                 String              @id @default(cuid())
+  quoteRequestId     String
+  vendorId           String
+  proposedTotalPrice Decimal             @db.Decimal(12, 2)
+  deliveryEstimate   String?
+  validUntil         DateTime?
+  message            String?
+  pdfProposalUrl     String?
+  lineItems          Json?
+  paymentTerms       String?
+  warrantyTerms      String?
+  status             QuoteResponseStatus @default(PENDING)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  quoteRequest       QuoteRequest        @relation(fields: [quoteRequestId], references: [id])
+  vendor             User                @relation("QuoteVendor", fields: [vendorId], references: [id])
+
+  @@map("quote_responses")
+}
+
+model ROISimulation {
+  id               String       @id @default(cuid())
+  userId           String?
+  projectType      ProjectType
+  location         String
+  systemSizeKw     Decimal      @db.Decimal(10, 2)
+  panelWattage     Int?
+  mountingType     MountingType
+  targetBudget     Decimal?     @db.Decimal(12, 2)
+  estimatedPanels  Int
+  estimatedCost    Decimal      @db.Decimal(12, 2)
+  roiYears         Decimal      @db.Decimal(5, 2)
+  co2OffsetTons    Decimal      @db.Decimal(8, 2)
+  installationTime String?
+  freightCost      Decimal?     @db.Decimal(10, 2)
+  energyProduction Decimal?     @db.Decimal(10, 2)
+  createdAt        DateTime     @default(now())
+  user             User?        @relation("ROISimulations", fields: [userId], references: [id])
+
+  @@map("roi_simulations")
+}
+
+model VendorProject {
+  id           String       @id @default(cuid())
+  vendorId     String
+  title        String
+  description  String?
+  status       String
+  projectType  ProjectType?
+  systemSizeKw Decimal?     @db.Decimal(10, 2)
+  location     String?
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  vendor       User         @relation("VendorProjects", fields: [vendorId], references: [id])
+
+  @@map("vendor_projects")
+}
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  type         ConversationType          @default(GENERAL)
+  status       ConversationStatus        @default(ACTIVE)
+  subject      String?
+  productId    String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  context      String?
+  participants ConversationParticipant[]
+  product      Product?                  @relation(fields: [productId], references: [id])
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+  role           String?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_participants")
+}
+
 enum UserRole {
-  USER
+  BUYER
+  VENDOR
   ADMIN
   MODERATOR
-  ENTERPRISE_VENDOR
 }
 
 enum ProductStatus {
@@ -73,6 +504,29 @@ enum NotificationType {
   PAYMENT_FAILED
 }
 
+enum MessageType {
+  GENERAL
+  PRODUCT_INQUIRY
+  QUOTE_DISCUSSION
+  VENDOR_INQUIRY
+  SUPPORT
+}
+
+enum ConversationType {
+  GENERAL
+  DIRECT_MESSAGE
+  PRODUCT_INQUIRY
+  VENDOR_INQUIRY
+  QUOTE_DISCUSSION
+  SUPPORT_TICKET
+}
+
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -93,341 +547,6 @@ enum TransactionStatus {
   CANCELLED
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  role      UserRole @default(USER)
-  verified  Boolean  @default(false)
-  avatar    String?
-  phone     String?
-  
-  // Address fields
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  // Enterprise vendor fields
-  isEnterpriseVendor Boolean @default(false)
-  companyName        String?
-  locationCity       String?
-  locationState      String?
-  
-  // Stripe fields
-  stripeCustomerId String?  @unique
-  stripeAccountId  String?  @unique // For sellers
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  products         Product[]
-  bids             Bid[]
-  ordersAsBuyer    Order[]   @relation("BuyerOrders")
-  ordersAsSeller   Order[]   @relation("SellerOrders")
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviews          Review[]
-  notifications    Notification[]
-  payments         Payment[]
-  wallet           Wallet?
-  
-  // Enterprise relations
-  enterpriseListings EnterpriseListing[] @relation("EnterpriseVendor")
-  quoteRequests     QuoteRequest[]      @relation("QuoteBuyer")
-  quoteResponses    QuoteResponse[]     @relation("QuoteVendor")
-  roiSimulations    ROISimulation[]     @relation("ROISimulations")
-  vendorProjects    VendorProject[]     @relation("VendorProjects")
-  
-  // Auth-related
-  emailVerificationToken String?
-  emailVerificationExpires DateTime?
-  passwordResetToken     String?
-  passwordResetExpires   DateTime?
-  refreshTokens          RefreshToken[]
-  
-  @@map("users")
-}
-
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  
-  @@map("refresh_tokens")
-}
-
-model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  parentId    String?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relations
-  products Product[]
-  enterpriseListings EnterpriseListing[]
-  
-  @@map("categories")
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  price       Decimal  @db.Decimal(10, 2)
-  imageUrls   String[]
-  status      ProductStatus @default(DRAFT)
-  condition   ProductCondition
-  
-  // Category
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  
-  // Owner
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  
-  // Auction fields
-  isAuction       Boolean   @default(false)
-  auctionEndDate  DateTime?
-  currentBid      Decimal?  @db.Decimal(10, 2)
-  minimumBid      Decimal?  @db.Decimal(10, 2)
-  buyNowPrice     Decimal?  @db.Decimal(10, 2)
-  
-  // Location
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  specifications ProductSpecification[]
-  bids           Bid[]
-  orders         Order[]
-  messages       Message[]
-  reviews        Review[]
-  
-  @@map("products")
-}
-
-model ProductSpecification {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String
-  value     String
-  unit      String?
-  
-  @@map("product_specifications")
-}
-
-model Bid {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  amount    Decimal  @db.Decimal(10, 2)
-  isWinning Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  @@map("bids")
-}
-
-model Order {
-  id       String      @id @default(cuid())
-  buyerId  String
-  buyer    User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId String
-  seller   User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  productId String
-  product  Product     @relation(fields: [productId], references: [id])
-  status   OrderStatus @default(PENDING)
-  totalAmount Decimal  @db.Decimal(10, 2)
-  
-  // Shipping address
-  shippingStreet  String
-  shippingCity    String
-  shippingState   String
-  shippingZipCode String
-  shippingCountry String
-  
-  // Payment
-  paymentType     PaymentType?
-  paymentLast4    String?
-  paymentExpiryMonth Int?
-  paymentExpiryYear  Int?
-  paymentBrand    String?
-  
-  // Stripe fields
-  stripePaymentIntentId String? @unique
-  stripeFee            Decimal? @db.Decimal(10, 2)
-  platformFee          Decimal? @db.Decimal(10, 2)
-  sellerAmount         Decimal? @db.Decimal(10, 2)
-  
-  trackingNumber String?
-  notes         String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  reviews Review[]
-  payments Payment[]
-  
-  @@map("orders")
-}
-
-model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  content    String
-  isRead     Boolean  @default(false)
-  productId  String?
-  product    Product? @relation(fields: [productId], references: [id])
-  sentAt     DateTime @default(now())
-  
-  @@map("messages")
-}
-
-model Review {
-  id       String  @id @default(cuid())
-  rating   Int     @db.SmallInt
-  comment  String?
-  productId String
-  product  Product @relation(fields: [productId], references: [id])
-  authorId String
-  author   User    @relation(fields: [authorId], references: [id])
-  orderId  String?
-  order    Order?  @relation(fields: [orderId], references: [id])
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("reviews")
-}
-
-model Notification {
-  id      String           @id @default(cuid())
-  userId  String
-  user    User             @relation(fields: [userId], references: [id])
-  type    NotificationType
-  title   String
-  message String
-  isRead  Boolean          @default(false)
-  data    Json?
-  
-  createdAt DateTime @default(now())
-  
-  @@map("notifications")
-}
-
-model Payment {
-  id     String        @id @default(cuid())
-  userId String
-  user   User          @relation(fields: [userId], references: [id])
-  orderId String?
-  order  Order?        @relation(fields: [orderId], references: [id])
-  
-  // Stripe fields
-  stripePaymentIntentId String  @unique
-  stripeChargeId       String?
-  amount               Decimal @db.Decimal(10, 2)
-  currency             String  @default("usd")
-  status               PaymentStatus
-  
-  // Metadata
-  description String?
-  metadata    Json?
-  
-  // Payment method details
-  paymentMethodType String? // card, bank_transfer, etc.
-  cardBrand        String?
-  cardLast4        String?
-  cardExpMonth     Int?
-  cardExpYear      Int?
-  
-  // Fees
-  stripeFee    Decimal? @db.Decimal(10, 2)
-  platformFee  Decimal? @db.Decimal(10, 2)
-  netAmount    Decimal? @db.Decimal(10, 2)
-  
-  // Timestamps
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  paidAt       DateTime?
-  refundedAt   DateTime?
-  
-  @@map("payments")
-}
-
-model Wallet {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance       Decimal  @default(0.00) @db.Decimal(10, 2)
-  lockedBalance Decimal  @default(0.00) @db.Decimal(10, 2) // For pending auctions
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  transactions  WalletTransaction[]
-  escrows       Escrow[]
-  
-  @@map("wallets")
-}
-
-model WalletTransaction {
-  id          String            @id @default(cuid())
-  walletId    String
-  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  type        TransactionType
-  amount      Decimal           @db.Decimal(10, 2)
-  status      TransactionStatus @default(PENDING)
-  description String
-  reference   String?           // Order ID, Payment ID, etc.
-  metadata    Json?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  
-  @@map("wallet_transactions")
-}
-
-model Escrow {
-  id          String            @id @default(cuid())
-  orderId     String            @unique
-  buyerWalletId String
-  buyerWallet Wallet            @relation(fields: [buyerWalletId], references: [id])
-  sellerId    String
-  amount      Decimal           @db.Decimal(10, 2)
-  status      TransactionStatus @default(PENDING)
-  reason      String?
-  releasedAt  DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  
-  @@map("escrows")
-}
-
-// Enterprise Quote System Enums
 enum EnterpriseListingStatus {
   DRAFT
   ACTIVE
@@ -464,152 +583,3 @@ enum MountingType {
   GROUND_MOUNT
   ROOF_MOUNT
 }
-
-// Enterprise Listing Model
-model EnterpriseListing {
-  id          String                  @id @default(cuid())
-  name        String
-  description String
-  categoryId  String
-  category    Category                @relation(fields: [categoryId], references: [id])
-  vendorId    String
-  vendor      User                    @relation("EnterpriseVendor", fields: [vendorId], references: [id])
-  
-  // Specifications stored as JSON
-  specs       Json?
-  
-  // Location and delivery
-  location    String
-  deliveryTime String?  // e.g., "2-4 weeks"
-  
-  // Pricing
-  basePrice   Decimal?                @db.Decimal(10, 2)
-  priceUnit   String?                 // e.g., "per kW", "per panel", "per project"
-  
-  // Status
-  status      EnterpriseListingStatus @default(DRAFT)
-  quoteOnly   Boolean                 @default(true)
-  
-  // Images and documents
-  imageUrls   String[]
-  documentUrls String[]               // PDFs, spec sheets, etc.
-  
-  createdAt   DateTime                @default(now())
-  updatedAt   DateTime                @updatedAt
-  
-  // Relations
-  quoteRequests QuoteRequest[]
-  
-  @@map("enterprise_listings")
-}
-
-// Quote Request Model
-model QuoteRequest {
-  id               String             @id @default(cuid())
-  buyerCompanyId   String
-  buyer            User               @relation("QuoteBuyer", fields: [buyerCompanyId], references: [id])
-  listingId        String?
-  listing          EnterpriseListing? @relation(fields: [listingId], references: [id])
-  
-  // Request details
-  requestedQuantity Int
-  projectSpecs     Json?              // Project specifications as JSON
-  deliveryDeadline DateTime?
-  notes            String?
-  
-  // Project details for ROI calculation
-  projectType      ProjectType?
-  systemSizeKw     Decimal?           @db.Decimal(10, 2)
-  location         String?            // ZIP code or city
-  mountingType     MountingType?
-  budget           Decimal?           @db.Decimal(12, 2)
-  
-  status           QuoteRequestStatus @default(PENDING)
-  
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  expiresAt        DateTime?
-  
-  // Relations
-  responses        QuoteResponse[]
-  
-  @@map("quote_requests")
-}
-
-// Quote Response Model
-model QuoteResponse {
-  id                  String              @id @default(cuid())
-  quoteRequestId      String
-  quoteRequest        QuoteRequest        @relation(fields: [quoteRequestId], references: [id])
-  vendorId            String
-  vendor              User                @relation("QuoteVendor", fields: [vendorId], references: [id])
-  
-  // Response details
-  proposedTotalPrice  Decimal             @db.Decimal(12, 2)
-  deliveryEstimate    String?             // e.g., "4-6 weeks"
-  validUntil          DateTime?
-  
-  // Additional details
-  message             String?
-  pdfProposalUrl      String?             // Link to detailed PDF proposal
-  lineItems           Json?               // Detailed breakdown as JSON
-  
-  // Terms
-  paymentTerms        String?
-  warrantyTerms       String?
-  
-  status              QuoteResponseStatus @default(PENDING)
-  
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  
-  @@map("quote_responses")
-}
-
-// ROI Simulation Model (for storing user simulations)
-model ROISimulation {
-  id              String      @id @default(cuid())
-  userId          String?
-  user            User?       @relation("ROISimulations", fields: [userId], references: [id])
-  
-  // Input parameters
-  projectType     ProjectType
-  location        String      // ZIP code
-  systemSizeKw    Decimal     @db.Decimal(10, 2)
-  panelWattage    Int?
-  mountingType    MountingType
-  targetBudget    Decimal?    @db.Decimal(12, 2)
-  
-  // Calculated results
-  estimatedPanels Int
-  estimatedCost   Decimal     @db.Decimal(12, 2)
-  roiYears        Decimal     @db.Decimal(5, 2)
-  co2OffsetTons   Decimal     @db.Decimal(8, 2)
-  
-  // Additional calculations
-  installationTime String?
-  freightCost     Decimal?    @db.Decimal(10, 2)
-  energyProduction Decimal?   @db.Decimal(10, 2) // kWh/year
-  
-  createdAt       DateTime    @default(now())
-  
-  @@map("roi_simulations")
-}
-
-// Vendor Project Model (for tracking vendor project history)
-model VendorProject {
-  id          String    @id @default(cuid())
-  vendorId    String
-  vendor      User      @relation("VendorProjects", fields: [vendorId], references: [id])
-  title       String
-  description String?
-  status      String    // e.g. "completed", "in-progress", "cancelled"
-  projectType ProjectType?
-  systemSizeKw Decimal? @db.Decimal(10, 2)
-  location    String?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  @@map("vendor_projects")
-} 

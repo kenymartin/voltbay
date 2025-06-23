@@ -165,6 +165,13 @@ class ApiService {
         }
       }
 
+      // Handle rate limiting (429 errors)
+      if (error.response?.status === 429) {
+        console.warn('🚦 Rate limit hit for:', originalRequest?.url)
+        // Don't show toast for rate limits to avoid spam
+        return Promise.reject(error)
+      }
+
       // Handle other errors without showing toast for auth failures
       if (error.response?.status !== 401) {
         if (error.response?.data?.message) {

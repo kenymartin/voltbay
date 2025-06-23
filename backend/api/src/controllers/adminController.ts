@@ -89,6 +89,8 @@ export class AdminController {
           role: true,
           verified: true,
           avatar: true,
+          isEnterprise: true,
+          companyName: true,
           createdAt: true,
           updatedAt: true
         },

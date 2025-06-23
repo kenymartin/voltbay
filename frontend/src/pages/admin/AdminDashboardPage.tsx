@@ -131,68 +131,87 @@ export default function AdminDashboardPage() {
     </div>
   )
 
-  const UserRow = ({ user }: { user: User }) => (
-    <tr className="hover:bg-gray-50">
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.firstName} className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <span className="text-sm font-medium text-gray-600">
-                {user.firstName?.[0] || user.email[0].toUpperCase()}
-              </span>
-            )}
-          </div>
-          <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">
-              {user.firstName} {user.lastName}
+  const UserRow = ({ user }: { user: User }) => {
+    // Determine user type for display
+    const getUserType = () => {
+      if (user.role === 'ADMIN') return 'Admin'
+      if (user.role === 'MODERATOR') return 'Moderator'
+      if (user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor) return 'Enterprise Vendor'
+      if (user.role === 'USER' && !user.isEnterpriseVendor) return 'Customer'
+      return 'User'
+    }
+
+    const getUserTypeColor = () => {
+      if (user.role === 'ADMIN') return 'bg-purple-100 text-purple-800'
+      if (user.role === 'MODERATOR') return 'bg-blue-100 text-blue-800'
+      if (user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor) return 'bg-orange-100 text-orange-800'
+      return 'bg-gray-100 text-gray-800'
+    }
+
+    return (
+      <tr className="hover:bg-gray-50">
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.firstName} className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <span className="text-sm font-medium text-gray-600">
+                  {user.firstName?.[0] || user.email[0].toUpperCase()}
+                </span>
+              )}
             </div>
-            <div className="text-sm text-gray-500">{user.email}</div>
+            <div className="ml-4">
+              <div className="text-sm font-medium text-gray-900">
+                {user.firstName} {user.lastName}
+                {user.companyName && (
+                  <span className="text-xs text-gray-500 block">
+                    {user.companyName}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">{user.email}</div>
+            </div>
           </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`px-2 py-1 text-xs rounded ${
-          user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
-          user.role === 'MODERATOR' ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {user.role}
-        </span>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`px-2 py-1 text-xs rounded ${
-          user.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-        }`}>
-          {user.verified ? 'Verified' : 'Unverified'}
-        </span>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(user.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <div className="flex space-x-2">
-          {!user.verified && (
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`px-2 py-1 text-xs rounded ${getUserTypeColor()}`}>
+            {getUserType()}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`px-2 py-1 text-xs rounded ${
+            user.verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {user.verified ? 'Verified' : 'Unverified'}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {new Date(user.createdAt).toLocaleDateString()}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <div className="flex space-x-2">
+            {!user.verified && (
+              <button
+                onClick={() => handleUserAction(user.id, 'verify')}
+                className="text-green-600 hover:text-green-900"
+                title="Verify User"
+              >
+                <CheckCircle className="w-4 h-4" />
+              </button>
+            )}
             <button
-              onClick={() => handleUserAction(user.id, 'verify')}
-              className="text-green-600 hover:text-green-900"
-              title="Verify User"
+              onClick={() => handleUserAction(user.id, 'ban')}
+              className="text-red-600 hover:text-red-900"
+              title="Ban User"
             >
-              <CheckCircle className="w-4 h-4" />
+              <Ban className="w-4 h-4" />
             </button>
-          )}
-          <button
-            onClick={() => handleUserAction(user.id, 'ban')}
-            className="text-red-600 hover:text-red-900"
-            title="Ban User"
-          >
-            <Ban className="w-4 h-4" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  )
+          </div>
+        </td>
+      </tr>
+    )
+  }
 
   const ProductRow = ({ product }: { product: Product }) => (
     <tr className="hover:bg-gray-50">
@@ -429,10 +448,40 @@ export default function AdminDashboardPage() {
                            user.lastName?.toLowerCase().includes(userSearch.toLowerCase()) ||
                            user.email.toLowerCase().includes(userSearch.toLowerCase())
       
-      const matchesStatus = !selectedUserStatus || 
-                           selectedUserStatus === 'verified' && user.verified ||
-                           selectedUserStatus === 'unverified' && !user.verified ||
-                           selectedUserStatus === user.role
+      let matchesStatus = true
+      
+      if (selectedUserStatus) {
+        switch (selectedUserStatus) {
+          case 'verified':
+            matchesStatus = user.verified
+            break
+          case 'unverified':
+            matchesStatus = !user.verified
+            break
+          case 'ADMIN':
+          case 'MODERATOR':
+            matchesStatus = user.role === selectedUserStatus
+            break
+          case 'CUSTOMER':
+            // Regular users who are not enterprise vendors
+            matchesStatus = user.role === 'USER' && !user.isEnterpriseVendor
+            break
+          case 'VENDOR':
+            // Regular users who might be vendors (selling products)
+            matchesStatus = user.role === 'USER' && !user.isEnterpriseVendor
+            break
+          case 'ENTERPRISE_VENDOR':
+            // Enterprise vendors
+            matchesStatus = user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor
+            break
+          case 'USER':
+            // All regular users (both customers and vendors)
+            matchesStatus = user.role === 'USER'
+            break
+          default:
+            matchesStatus = true
+        }
+      }
       
       return matchesSearch && matchesStatus
     })
@@ -448,11 +497,13 @@ export default function AdminDashboardPage() {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Users</option>
-              <option value="verified">Verified</option>
-              <option value="unverified">Unverified</option>
-              <option value="ADMIN">Admin</option>
-              <option value="MODERATOR">Moderator</option>
-              <option value="USER">Regular User</option>
+              <option value="CUSTOMER">Customers</option>
+              <option value="VENDOR">Vendors</option>
+              <option value="ENTERPRISE_VENDOR">Enterprise Vendors</option>
+              <option value="ADMIN">Admins</option>
+              <option value="MODERATOR">Moderators</option>
+              <option value="verified">Verified Only</option>
+              <option value="unverified">Unverified Only</option>
             </select>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -475,7 +526,7 @@ export default function AdminDashboardPage() {
                   User
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
+                  Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
