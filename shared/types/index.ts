@@ -10,12 +10,15 @@ export interface User {
   avatar?: string;
   phone?: string;
   address?: Address;
+  isEnterprise?: boolean;
+  companyName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export enum UserRole {
-  USER = 'USER',
+  BUYER = 'BUYER',
+  VENDOR = 'VENDOR',
   ADMIN = 'ADMIN',
   MODERATOR = 'MODERATOR'
 }

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { useAuthStore } from '../../store/authStore'
 import apiService from '../../services/api'
 import WalletDashboard from '../../components/WalletDashboard'
+import { shouldShowFeature, isEnterpriseUser } from '../../utils/userPermissions'
 import type { Product, Bid, Order, ApiResponse } from '@shared/dist'
 
 type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'wallet' | 'profile'
@@ -271,23 +272,66 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-blue-900">Welcome to VoltBay!</h3>
+            <h3 className="text-sm font-medium text-blue-900">
+              {isEnterpriseUser(user) ? 'Welcome to VoltBay Enterprise!' : 'Welcome to VoltBay!'}
+            </h3>
             <p className="text-sm text-blue-700 mt-1">
-              Your solar marketplace dashboard is ready. Start by creating your first listing or browsing available products.
+              {isEnterpriseUser(user) && user?.role === 'BUYER'
+                ? 'Your enterprise buyer dashboard is ready. Browse vendors and calculate project ROI.'
+                : isEnterpriseUser(user) && user?.role === 'VENDOR'
+                ? 'Your enterprise vendor dashboard is ready. Manage your services and client relationships.'
+                : 'Your solar marketplace dashboard is ready. Start by creating your first listing or browsing available products.'
+              }
             </p>
             <div className="mt-3 flex space-x-3">
-              <button
-                onClick={() => navigate('/sell')}
-                className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-              >
-                Create Listing
-              </button>
-              <button
-                onClick={() => navigate('/search')}
-                className="text-xs bg-white text-blue-600 px-3 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors"
-              >
-                Browse Products
-              </button>
+              {isEnterpriseUser(user) && user?.role === 'BUYER' ? (
+                <>
+                  <button
+                    onClick={() => navigate('/enterprise')}
+                    className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Browse Vendors
+                  </button>
+                  <button
+                    onClick={() => navigate('/roi-calculator')}
+                    className="text-xs bg-white text-blue-600 px-3 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors"
+                  >
+                    ROI Calculator
+                  </button>
+                </>
+              ) : isEnterpriseUser(user) && user?.role === 'VENDOR' ? (
+                <>
+                  <button
+                    onClick={() => navigate('/sell')}
+                    className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Add Service
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('listings')}
+                    className="text-xs bg-white text-blue-600 px-3 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors"
+                  >
+                    My Services
+                  </button>
+                </>
+              ) : (
+                <>
+                  {shouldShowFeature(user, 'showSellButton') && (
+                    <button
+                      onClick={() => navigate('/sell')}
+                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Create Listing
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate('/search')}
+                    className="text-xs bg-white text-blue-600 px-3 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors"
+                  >
+                    Browse Products
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -295,30 +339,36 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {shouldShowFeature(user, 'canViewMyListings') && (
+          <StatCard
+            title={isEnterpriseUser(user) ? "Active Services" : "Active Listings"}
+            value={stats.activeListings}
+            icon={Package}
+            color="bg-blue-500"
+          />
+        )}
         <StatCard
-          title="Active Listings"
-          value={stats.activeListings}
-          icon={Package}
-          color="bg-blue-500"
-        />
-        <StatCard
-          title="Total Sales"
+          title={isEnterpriseUser(user) ? "Completed Projects" : "Total Sales"}
           value={stats.totalSales}
           icon={CheckCircle}
           color="bg-green-500"
         />
-        <StatCard
-          title="Winning Bids"
-          value={stats.activeBids}
-          icon={Gavel}
-          color="bg-purple-500"
-        />
-        <StatCard
-          title="Pending Orders"
-          value={stats.pendingOrders}
-          icon={Clock}
-          color="bg-orange-500"
-        />
+        {shouldShowFeature(user, 'canViewMyBids') && (
+          <StatCard
+            title="Winning Bids"
+            value={stats.activeBids}
+            icon={Gavel}
+            color="bg-purple-500"
+          />
+        )}
+        {shouldShowFeature(user, 'canViewMyOrders') && (
+          <StatCard
+            title={isEnterpriseUser(user) ? "Active Contracts" : "Pending Orders"}
+            value={stats.pendingOrders}
+            icon={Clock}
+            color="bg-orange-500"
+          />
+        )}
       </div>
 
       {/* Financial Summary */}
@@ -364,70 +414,203 @@ export default function DashboardPage() {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <button
-            onClick={() => navigate('/sell')}
-            className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
-                <Plus className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">Create Listing</h3>
-              <p className="text-sm text-gray-600">Sell your solar equipment</p>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => navigate('/search')}
-            className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
-                <Package className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">Browse Products</h3>
-              <p className="text-sm text-gray-600">Find solar equipment</p>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('bids')}
-            className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
-                <Gavel className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">My Bids</h3>
-              <p className="text-sm text-gray-600">Track auction bids</p>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => navigate('/orders')}
-            className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
-                <ShoppingCart className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">My Orders</h3>
-              <p className="text-sm text-gray-600">Track purchases & sales</p>
-            </div>
-          </button>
-          
-          <button
-            onClick={() => navigate('/profile')}
-            className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all group"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
-                <User className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-medium text-gray-900 mb-1">Edit Profile</h3>
-              <p className="text-sm text-gray-600">Update your information</p>
-            </div>
-          </button>
+          {isEnterpriseUser(user) && user?.role === 'BUYER' ? (
+            <>
+              <button
+                onClick={() => navigate('/enterprise')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
+                    <Plus className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Browse Vendors</h3>
+                  <p className="text-sm text-gray-600">Find solar providers</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/roi-calculator')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">ROI Calculator</h3>
+                  <p className="text-sm text-gray-600">Calculate project returns</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('orders')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">My Contracts</h3>
+                  <p className="text-sm text-gray-600">Track client projects</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/profile')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Company Profile</h3>
+                  <p className="text-sm text-gray-600">Update business info</p>
+                </div>
+              </button>
+            </>
+          ) : isEnterpriseUser(user) && user?.role === 'VENDOR' ? (
+            <>
+              <button
+                onClick={() => navigate('/sell')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
+                    <Plus className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Add Service</h3>
+                  <p className="text-sm text-gray-600">Create new offering</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('listings')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
+                    <Package className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">My Services</h3>
+                  <p className="text-sm text-gray-600">Manage offerings</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('orders')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Client Projects</h3>
+                  <p className="text-sm text-gray-600">Track contracts</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('wallet')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
+                    <Wallet className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Finances</h3>
+                  <p className="text-sm text-gray-600">Revenue & payments</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/profile')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Company Profile</h3>
+                  <p className="text-sm text-gray-600">Update business info</p>
+                </div>
+              </button>
+            </>
+          ) : (
+            <>
+              {shouldShowFeature(user, 'showSellButton') && (
+                <button
+                  onClick={() => navigate('/sell')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
+                      <Plus className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">Create Listing</h3>
+                    <p className="text-sm text-gray-600">Sell your solar equipment</p>
+                  </div>
+                </button>
+              )}
+              
+              {shouldShowFeature(user, 'canSeeBrowseProducts') && (
+                <button
+                  onClick={() => navigate('/search')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
+                      <Package className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">Browse Products</h3>
+                    <p className="text-sm text-gray-600">Find solar equipment</p>
+                  </div>
+                </button>
+              )}
+              
+              {shouldShowFeature(user, 'canSeeBids') && (
+                <button
+                  onClick={() => setActiveTab('bids')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
+                      <Gavel className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">My Bids</h3>
+                    <p className="text-sm text-gray-600">Track auction bids</p>
+                  </div>
+                </button>
+              )}
+              
+              {shouldShowFeature(user, 'canSeeOrders') && (
+                <button
+                  onClick={() => navigate('/orders')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                      <ShoppingCart className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">My Orders</h3>
+                    <p className="text-sm text-gray-600">Track purchases & sales</p>
+                  </div>
+                </button>
+              )}
+              
+              <button
+                onClick={() => navigate('/profile')}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all group"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <h3 className="font-medium text-gray-900 mb-1">Edit Profile</h3>
+                  <p className="text-sm text-gray-600">Update your information</p>
+                </div>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -729,14 +912,19 @@ export default function DashboardPage() {
     </div>
   )
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: User },
-    { id: 'listings', label: 'My Listings', icon: Package },
-    { id: 'bids', label: 'My Bids', icon: Gavel },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'wallet', label: 'Wallet', icon: Wallet },
-    { id: 'profile', label: 'Profile', icon: User },
+  // Filter tabs based on user permissions
+  const allTabs = [
+    { id: 'overview', label: 'Overview', icon: User, permission: null },
+    { id: 'listings', label: isEnterpriseUser(user) ? 'My Services' : 'My Listings', icon: Package, permission: 'canViewMyListings' },
+    { id: 'bids', label: 'My Bids', icon: Gavel, permission: 'canViewMyBids' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, permission: 'canViewMyOrders' },
+    { id: 'wallet', label: 'Wallet', icon: Wallet, permission: 'canViewWallet' },
+    { id: 'profile', label: 'Profile', icon: User, permission: null },
   ]
+
+  const tabs = allTabs.filter(tab => 
+    !tab.permission || shouldShowFeature(user, tab.permission as any)
+  )
 
   if (loading) {
     return (

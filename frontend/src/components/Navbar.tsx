@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useCartStore } from '../store/cartStore'
 import apiService from '../services/api'
+import { shouldShowFeature, isEnterpriseUser } from '../utils/userPermissions'
 import { 
   User, 
   LogOut, 
@@ -16,6 +17,7 @@ import {
   HardHat,
   ArrowLeft
 } from 'lucide-react'
+import NotificationDropdown from './NotificationDropdown'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -27,8 +29,10 @@ export default function Navbar() {
   const location = useLocation()
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
-  // Check if we're in Enterprise mode
-  const isEnterpriseMode = location.pathname.startsWith('/enterprise') || location.pathname.startsWith('/roi')
+  // Check if we're in Enterprise mode or if user is enterprise
+  const isEnterpriseMode = location.pathname.startsWith('/enterprise') || 
+                          location.pathname.startsWith('/roi') ||
+                          isEnterpriseUser(user)
 
   // Sync cart with current user
   useEffect(() => {
@@ -90,63 +94,77 @@ export default function Navbar() {
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {!isEnterpriseMode ? (
                 <>
-                  <Link
-                    to="/products"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Browse
-                  </Link>
-                  <Link
-                    to="/auctions"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Auctions
-                  </Link>
-                  <Link
-                    to="/categories"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Categories
-                  </Link>
-                  <Link
-                    to="/enterprise"
-                    className="border-transparent text-sky-600 hover:border-sky-300 hover:text-sky-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
-                  >
-                    <HardHat className="h-4 w-4" />
-                    <span>Enterprise</span>
-                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">NEW</span>
-                  </Link>
+                  {shouldShowFeature(user, 'canAccessMarketplace') && (
+                    <Link
+                      to="/products"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Browse
+                    </Link>
+                  )}
+                  {shouldShowFeature(user, 'canAccessAuctions') && (
+                    <Link
+                      to="/auctions"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Auctions
+                    </Link>
+                  )}
+                  {shouldShowFeature(user, 'canAccessCategories') && (
+                    <Link
+                      to="/categories"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+                    >
+                      Categories
+                    </Link>
+                  )}
+                  {shouldShowFeature(user, 'canAccessEnterprise') && (
+                    <Link
+                      to="/enterprise"
+                      className="border-transparent text-sky-600 hover:border-sky-300 hover:text-sky-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
+                    >
+                      <HardHat className="h-4 w-4" />
+                      <span>Enterprise</span>
+                      <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+                    </Link>
+                  )}
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Back to VoltBay</span>
-                  </Link>
-                  <Link
-                    to="/enterprise"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1 ${
-                      location.pathname === '/enterprise' 
-                        ? 'border-blue-500 text-blue-600' 
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  >
-                    <HardHat className="h-4 w-4" />
-                    <span>Enterprise</span>
-                  </Link>
-                  <Link
-                    to="/roi-calculator"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      location.pathname === '/roi-calculator' 
-                        ? 'border-blue-500 text-blue-600' 
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  >
-                    ROI Simulator
-                  </Link>
+                  {!isEnterpriseUser(user) && (
+                    <Link
+                      to="/"
+                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Back to VoltBay</span>
+                    </Link>
+                  )}
+                  {shouldShowFeature(user, 'canAccessEnterprise') && (
+                    <Link
+                      to="/enterprise"
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1 ${
+                        location.pathname === '/enterprise' 
+                          ? 'border-blue-500 text-blue-600' 
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                    >
+                      <HardHat className="h-4 w-4" />
+                      <span>Enterprise</span>
+                    </Link>
+                  )}
+                  {shouldShowFeature(user, 'canAccessROICalculator') && (
+                    <Link
+                      to="/roi-calculator"
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                        location.pathname === '/roi-calculator' 
+                          ? 'border-blue-500 text-blue-600' 
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                    >
+                      ROI Simulator
+                    </Link>
+                  )}
                 </>
               )}
             </div>
@@ -174,29 +192,32 @@ export default function Navbar() {
                 <button className="text-gray-500 hover:text-gray-700">
                   <Heart className="h-6 w-6" />
                 </button>
-                <button className="text-gray-500 hover:text-gray-700">
-                  <Bell className="h-6 w-6" />
-                </button>
+                <NotificationDropdown />
 
-                {/* Shopping Cart */}
-                <button
-                  onClick={toggleCart}
-                  className="relative text-gray-500 hover:text-gray-700 p-2"
-                >
-                  <ShoppingCart className="h-6 w-6" />
-                  {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartItemCount > 9 ? '9+' : cartItemCount}
-                    </span>
-                  )}
-                </button>
+                {/* Shopping Cart - Only for regular customers */}
+                {shouldShowFeature(user, 'showShoppingCart') && (
+                  <button
+                    onClick={toggleCart}
+                    className="relative text-gray-500 hover:text-gray-700 p-2"
+                  >
+                    <ShoppingCart className="h-6 w-6" />
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {cartItemCount > 9 ? '9+' : cartItemCount}
+                      </span>
+                    )}
+                  </button>
+                )}
 
-                <Link
-                  to="/sell"
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                  Sell
-                </Link>
+                {/* Sell Button - Only for regular vendors */}
+                {shouldShowFeature(user, 'showSellButton') && (
+                  <Link
+                    to="/sell"
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                  >
+                    Sell
+                  </Link>
+                )}
 
                 {/* Profile dropdown */}
                 <div className="relative">
@@ -236,6 +257,13 @@ export default function Navbar() {
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
                         Profile
+                      </Link>
+                      <Link
+                        to="/messages"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Messages
                       </Link>
                       {user?.role === 'ADMIN' && (
                         <Link
@@ -321,70 +349,84 @@ export default function Navbar() {
           <div className="pt-2 pb-3 space-y-1">
             {!isEnterpriseMode ? (
               <>
-                <Link
-                  to="/products"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Browse
-                </Link>
-                <Link
-                  to="/auctions"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Auctions
-                </Link>
-                <Link
-                  to="/categories"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Categories
-                </Link>
-                <Link
-                  to="/enterprise"
-                  className="flex items-center px-4 py-2 text-sm text-sky-600 hover:bg-gray-100 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <HardHat className="h-4 w-4 mr-2" />
-                  Enterprise
-                  <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold ml-auto">NEW</span>
-                </Link>
+                {shouldShowFeature(user, 'canSeeBrowseProducts') && (
+                  <Link
+                    to="/products"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Browse
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canSeeAuctions') && (
+                  <Link
+                    to="/auctions"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Auctions
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canSeeCategories') && (
+                  <Link
+                    to="/categories"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Categories
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canSeeEnterprise') && (
+                  <Link
+                    to="/enterprise"
+                    className="flex items-center px-4 py-2 text-sm text-sky-600 hover:bg-gray-100 font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <HardHat className="h-4 w-4 mr-2" />
+                    Enterprise
+                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold ml-auto">NEW</span>
+                  </Link>
+                )}
               </>
             ) : (
               <>
-                <Link
-                  to="/"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to VoltBay
-                </Link>
-                <Link
-                  to="/enterprise"
-                  className={`flex items-center px-4 py-2 text-sm ${
-                    location.pathname === '/enterprise' 
-                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <HardHat className="h-4 w-4 mr-2" />
-                  Enterprise
-                </Link>
-                <Link
-                  to="/roi-calculator"
-                  className={`block px-4 py-2 text-sm ${
-                    location.pathname === '/roi-calculator' 
-                      ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  ROI Simulator
-                </Link>
+                {!isEnterpriseUser(user) && (
+                  <Link
+                    to="/"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to VoltBay
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canSeeEnterprise') && (
+                  <Link
+                    to="/enterprise"
+                    className={`flex items-center px-4 py-2 text-sm ${
+                      location.pathname === '/enterprise' 
+                        ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <HardHat className="h-4 w-4 mr-2" />
+                    Enterprise
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canSeeROICalculator') && (
+                  <Link
+                    to="/roi-calculator"
+                    className={`block px-4 py-2 text-sm ${
+                      location.pathname === '/roi-calculator' 
+                        ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    ROI Simulator
+                  </Link>
+                )}
               </>
             )}
             
@@ -402,17 +444,19 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Mobile Cart */}
-            <button
-              onClick={() => {
-                toggleCart()
-                setIsMenuOpen(false)
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <ShoppingCart className="h-5 w-5 mr-3" />
-              Cart ({cartItemCount})
-            </button>
+            {/* Mobile Cart - Only for regular customers */}
+            {shouldShowFeature(user, 'showShoppingCart') && (
+              <button
+                onClick={() => {
+                  toggleCart()
+                  setIsMenuOpen(false)
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <ShoppingCart className="h-5 w-5 mr-3" />
+                Cart ({cartItemCount})
+              </button>
+            )}
 
             {isAuthenticated && (
               <>

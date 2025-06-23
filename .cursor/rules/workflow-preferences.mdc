@@ -23,3 +23,28 @@ alwaysApply: true
 
 
 -Never overwrite my .env file without first asking and confirm.
+
+-If developing in React, please Use React Query for anything related to remote data fetching.
+
+Use useEffect for everything else (local side effects, event listeners, timers, DOM interactions, etc.).
+
+-Use Caching
+Cache frequent API responses using localStorage, sessionStorage, or in-memory solutions like SWR/React Query. 
+
+Avoid re-fetching unchanged data.
+
+-Debounce User Input
+For search or filters, debounce input to limit API calls and reduce backend load.
+
+- Paginate Large Requests
+Don’t fetch thousands of items at once. Use pagination or infinite scroll to fetch only what's needed.
+
+-Server-Side Rendering (SSR) or Static Site Generation (SSG)
+
+For public data, use SSR/SSG (like in Next.js) to fetch data at build or request time-reduces time-to-interactive.
+
+-Parallelize Requests
+Fetch independent data simultaneously using Promise.all() instead of waiting on each request one by one.
+
+-Compress & Optimize Responses
+Use gzip or brotli on the backend. On the frontend, strip unnecessary fields if you control the query.

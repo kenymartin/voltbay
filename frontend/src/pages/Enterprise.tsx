@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { Link, useSearchParams, Navigate } from 'react-router-dom'
 import { 
   HardHat, 
   MapPin, 
@@ -7,10 +7,13 @@ import {
   Calendar,
   Filter,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react'
 import { SolarNewsTicker } from '../components/SolarNewsTicker'
 import apiService from '../services/api'
+import { useAuthStore } from '../store/authStore'
+import { getUserType, shouldShowFeature } from '../utils/userPermissions'
 
 interface Vendor {
   id: string
@@ -22,10 +25,53 @@ interface Vendor {
   memberSince: string
 }
 
+interface PaginationInfo {
+  total: number
+  limit: number
+  offset: number
+  hasMore: boolean
+}
+
 export default function Enterprise() {
+  const { user } = useAuthStore()
+  const userType = getUserType(user)
+  
+  // Role-based access control
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  
+  // Only Enterprise Buyers should see vendor listings and ROI features
+  if (userType === 'ENTERPRISE_VENDOR') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <HardHat className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Enterprise Vendor Dashboard</h2>
+          <p className="text-gray-600 mb-6">
+            As an enterprise vendor, you can manage your services and respond to quote requests through your vendor dashboard.
+          </p>
+          <Link 
+            to="/dashboard" 
+            className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            Go to Vendor Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  
+  // Only Enterprise Buyers should access this page
+  if (userType !== 'ENTERPRISE_BUYER') {
+    return <Navigate to="/" replace />
+  }
+
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([])
+  const [allVendors, setAllVendors] = useState<Vendor[]>([]) // Store all loaded vendors
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [cityFilter, setCityFilter] = useState('')
@@ -33,6 +79,12 @@ export default function Enterprise() {
   const [showFilters, setShowFilters] = useState(false)
   const [searchParams] = useSearchParams()
   const [showQuoteSuccess, setShowQuoteSuccess] = useState(false)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    total: 0,
+    limit: 12,
+    offset: 0,
+    hasMore: true
+  })
 
   // Check if user was redirected from ROI calculator
   useEffect(() => {
@@ -44,19 +96,64 @@ export default function Enterprise() {
   }, [searchParams])
 
   useEffect(() => {
-    fetchVendors()
+    fetchVendors(true) // Initial load
   }, [])
 
   useEffect(() => {
     filterVendors()
-  }, [vendors, searchTerm, cityFilter, stateFilter])
+  }, [allVendors, searchTerm, cityFilter, stateFilter])
 
-  const fetchVendors = async () => {
+  // Infinite scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop
+        >= document.documentElement.offsetHeight - 1000 && // Load when 1000px from bottom
+        pagination?.hasMore &&
+        !loading &&
+        !loadingMore &&
+        !searchTerm &&
+        !cityFilter &&
+        !stateFilter // Only auto-load when no filters are active
+      ) {
+        fetchVendors(false) // Load more
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [pagination?.hasMore, loading, loadingMore, searchTerm, cityFilter, stateFilter])
+
+  const fetchVendors = async (isInitialLoad: boolean = false) => {
     try {
-      setLoading(true)
-      const response = await apiService.get('/api/enterprise/vendors') as any
-      if (response.success) {
-        setVendors(response.data)
+      if (isInitialLoad) {
+        setLoading(true)
+        setAllVendors([])
+        setPagination(prev => ({ ...prev, offset: 0 }))
+      } else {
+        setLoadingMore(true)
+      }
+
+      const offset = isInitialLoad ? 0 : (pagination?.offset || 0) + (pagination?.limit || 12)
+      const limit = pagination?.limit || 12
+      const response = await apiService.get(`/api/enterprise/vendors?limit=${limit}&offset=${offset}`) as any
+      
+      if (response?.success && response?.data) {
+        const newVendors = response.data || []
+        const newPagination = response.pagination || {
+          total: 0,
+          limit: limit,
+          offset: offset,
+          hasMore: false
+        }
+
+        if (isInitialLoad) {
+          setAllVendors(newVendors)
+        } else {
+          setAllVendors(prev => [...prev, ...newVendors])
+        }
+        
+        setPagination(newPagination)
       } else {
         setError('Failed to fetch vendors')
       }
@@ -65,11 +162,12 @@ export default function Enterprise() {
       console.error('Error fetching vendors:', err)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
-  const filterVendors = () => {
-    let filtered = vendors.filter(vendor => vendor.companyName) // Only show vendors with company names
+  const filterVendors = useCallback(() => {
+    let filtered = allVendors.filter(vendor => vendor.companyName) // Only show vendors with company names
 
     if (searchTerm) {
       filtered = filtered.filter(vendor =>
@@ -92,7 +190,7 @@ export default function Enterprise() {
     }
 
     setFilteredVendors(filtered)
-  }
+  }, [allVendors, searchTerm, cityFilter, stateFilter])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -102,17 +200,23 @@ export default function Enterprise() {
   }
 
   const getUniqueStates = () => {
-    const states = vendors
+    const states = allVendors
       .filter(vendor => vendor.locationState)
       .map(vendor => vendor.locationState)
     return [...new Set(states)].sort()
   }
 
   const getUniqueCities = () => {
-    const cities = vendors
+    const cities = allVendors
       .filter(vendor => vendor.locationCity)
       .map(vendor => vendor.locationCity)
     return [...new Set(cities)].sort()
+  }
+
+  const handleLoadMore = () => {
+    if (pagination?.hasMore && !loadingMore) {
+      fetchVendors(false)
+    }
   }
 
   if (loading) {
@@ -132,7 +236,7 @@ export default function Enterprise() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button 
-            onClick={fetchVendors}
+            onClick={() => fetchVendors(true)}
             className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
           >
             Try Again
@@ -252,6 +356,9 @@ export default function Enterprise() {
         <div className="mb-6">
           <p className="text-gray-600">
             {filteredVendors.length} enterprise vendor{filteredVendors.length !== 1 ? 's' : ''} found
+                      {(pagination?.total || 0) > 0 && (searchTerm || cityFilter || stateFilter) && (
+            <span className="text-gray-500"> (filtered from {pagination?.total || 0} total)</span>
+          )}
           </p>
         </div>
 
@@ -263,66 +370,108 @@ export default function Enterprise() {
             <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVendors.map((vendor) => (
-              <div
-                key={vendor.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="p-6">
-                  {/* Company Info */}
-                  <div className="flex items-start space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      {vendor.avatar ? (
-                        <img
-                          src={vendor.avatar}
-                          alt={vendor.companyName}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <HardHat className="h-6 w-6 text-primary-600" />
-                      )}
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVendors.map((vendor) => (
+                <div
+                  key={vendor.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="p-6">
+                    {/* Company Info */}
+                    <div className="flex items-start space-x-4 mb-4">
+                      <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        {vendor.avatar ? (
+                          <img
+                            src={vendor.avatar}
+                            alt={vendor.companyName}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <HardHat className="h-6 w-6 text-primary-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                          {vendor.companyName}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-600 mt-1">
+                          <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                          <span className="truncate">
+                            {vendor.locationCity}, {vendor.locationState}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">
-                        {vendor.companyName}
-                      </h3>
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span className="truncate">
-                          {vendor.locationCity}, {vendor.locationState}
+
+                    {/* Stats */}
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                        <span className="text-gray-600">
+                          <span className="font-semibold text-gray-900">{vendor.completedJobs}</span> completed jobs
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-gray-600">
+                          Member since {formatDate(vendor.memberSince)}
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Stats */}
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-gray-600">
-                        <span className="font-semibold text-gray-900">{vendor.completedJobs}</span> completed jobs
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                      <span className="text-gray-600">
-                        Member since {formatDate(vendor.memberSince)}
-                      </span>
-                    </div>
+                    {/* Action Button */}
+                    <Link
+                      to={`/enterprise/vendor/${vendor.id}`}
+                      className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg text-center font-medium hover:bg-primary-700 transition-colors duration-200 block"
+                    >
+                      View Details & Request Quote
+                    </Link>
                   </div>
-
-                  {/* Action Button */}
-                  <Link
-                    to={`/enterprise/vendor/${vendor.id}`}
-                    className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg text-center font-medium hover:bg-primary-700 transition-colors duration-200 block"
-                  >
-                    View Details & Request Quote
-                  </Link>
                 </div>
+              ))}
+            </div>
+
+            {/* Load More / Loading State */}
+            {(searchTerm || cityFilter || stateFilter) ? (
+              // Show manual load more button when filters are active
+              pagination?.hasMore && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Loading more vendors...</span>
+                      </>
+                    ) : (
+                      <span>Load More Vendors</span>
+                    )}
+                  </button>
+                </div>
+              )
+            ) : (
+              // Show loading indicator for infinite scroll
+              loadingMore && (
+                <div className="text-center mt-8">
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading more vendors...</span>
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* End of results indicator */}
+            {!pagination?.hasMore && allVendors.length > 0 && (
+              <div className="text-center mt-8 py-4">
+                <p className="text-gray-500">You've seen all available vendors</p>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

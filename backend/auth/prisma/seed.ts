@@ -125,7 +125,7 @@ async function main() {
       password: '$2a$12$lalQSfLY.YvKH6D.lObEI.3zSdIQq04s./ZotMbkUAqbws4xe5A3C', // password123 (same hash for testing)
       firstName: 'Test',
       lastName: 'User',
-      role: 'USER',
+      role: 'BUYER',
       verified: true
     }
   })

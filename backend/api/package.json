@@ -10,7 +10,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "backup-db": "ts-node scripts/backup-database.ts",
+    "restore-db": "ts-node scripts/restore-database.ts",
+    "reset-and-restore": "ts-node scripts/reset-and-restore.ts",
+    "seed-enterprise": "ts-node prisma/seed-enterprise-users.ts",
+    "seed-listings": "ts-node prisma/seed-enterprise-listings.ts",
+    "enterprise-summary": "ts-node scripts/enterprise-summary.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -11,8 +11,24 @@ import { envConfig } from '../config/env'
 interface RegisterData {
   email: string
   password: string
-  firstName?: string
-  lastName?: string
+  firstName: string
+  lastName: string
+  role?: 'BUYER' | 'VENDOR' | 'ADMIN'
+  isEnterprise?: boolean
+  // Company information for vendors or enterprise accounts
+  companyName?: string
+  phone?: string
+  street?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  country?: string
+  locationCity?: string
+  locationState?: string
+  // Enterprise specific fields
+  businessLicense?: string
+  certifications?: string[]
+  specialties?: string[]
 }
 
 interface LoginData {
@@ -28,6 +44,8 @@ interface AuthResult {
     lastName?: string
     role: string
     verified: boolean
+    isEnterprise: boolean
+    companyName?: string
   }
   accessToken: string
   refreshToken: string
@@ -41,7 +59,26 @@ export class AuthService {
   }
 
   async register(data: RegisterData): Promise<AuthResult> {
-    const { email, password, firstName, lastName } = data
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      role = 'BUYER',
+      isEnterprise = false,
+      companyName,
+      phone,
+      street,
+      city,
+      state,
+      zipCode,
+      country,
+      locationCity,
+      locationState,
+      businessLicense,
+      certifications,
+      specialties
+    } = data
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -59,15 +96,28 @@ export class AuthService {
     const emailVerificationToken = crypto.randomBytes(32).toString('hex')
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
-    // Create user
+    // Create user with additional fields
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         firstName,
         lastName,
+        role,
+        isEnterprise,
+        companyName,
+        phone,
+        street,
+        city,
+        state,
+        zipCode,
+        country,
+        locationCity: locationCity || city,
+        locationState: locationState || state,
         emailVerificationToken,
-        emailVerificationExpires
+        emailVerificationExpires,
+        // Enterprise accounts start unverified and require manual approval
+        verified: !isEnterprise
       },
       select: {
         id: true,
@@ -75,18 +125,33 @@ export class AuthService {
         firstName: true,
         lastName: true,
         role: true,
-        verified: true
+        verified: true,
+        isEnterprise: true,
+        companyName: true
       }
     })
 
-    // Send verification email
-    await this.emailService.sendVerificationEmail(email, emailVerificationToken)
+    // Send appropriate email based on user type
+    if (isEnterprise) {
+      // Send application received email for enterprise accounts
+      await this.emailService.sendEnterpriseApplicationEmail(email, {
+        firstName,
+        lastName,
+        companyName: companyName || '',
+        businessLicense,
+        certifications,
+        specialties
+      })
+    } else {
+      // Send regular verification email
+      await this.emailService.sendVerificationEmail(email, emailVerificationToken)
+    }
 
     // Generate tokens
     const accessToken = this.generateAccessToken(user.id)
     const refreshToken = await this.generateRefreshToken(user.id)
 
-    logger.info(`User registered successfully: ${email}`)
+    logger.info(`User registered successfully: ${email} (${isEnterprise ? 'Enterprise' : 'Regular'} ${role})`)
 
     return {
       user: {
@@ -95,7 +160,9 @@ export class AuthService {
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
         role: user.role,
-        verified: user.verified
+        verified: user.verified,
+        isEnterprise: user.isEnterprise,
+        companyName: user.companyName || undefined
       },
       accessToken,
       refreshToken
@@ -115,7 +182,9 @@ export class AuthService {
         firstName: true,
         lastName: true,
         role: true,
-        verified: true
+        verified: true,
+        isEnterprise: true,
+        companyName: true
       }
     })
 
@@ -127,6 +196,11 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401)
+    }
+
+    // Check if enterprise account is approved
+    if (user.isEnterprise && !user.verified) {
+      throw new AppError('Your enterprise account is still under review. Please wait for approval.', 403)
     }
 
     // Generate tokens
@@ -142,7 +216,9 @@ export class AuthService {
         firstName: user.firstName || undefined,
         lastName: user.lastName || undefined,
         role: user.role,
-        verified: user.verified
+        verified: user.verified,
+        isEnterprise: user.isEnterprise,
+        companyName: user.companyName || undefined
       },
       accessToken,
       refreshToken
@@ -176,7 +252,9 @@ export class AuthService {
             firstName: true,
             lastName: true,
             role: true,
-            verified: true
+            verified: true,
+            isEnterprise: true,
+            companyName: true
           }
         }
       }
@@ -202,7 +280,9 @@ export class AuthService {
         firstName: tokenRecord.user.firstName || undefined,
         lastName: tokenRecord.user.lastName || undefined,
         role: tokenRecord.user.role,
-        verified: tokenRecord.user.verified
+        verified: tokenRecord.user.verified,
+        isEnterprise: tokenRecord.user.isEnterprise,
+        companyName: tokenRecord.user.companyName || undefined
       },
       accessToken: newAccessToken,
       refreshToken: newRefreshToken

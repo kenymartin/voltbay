@@ -187,8 +187,8 @@ export class EnterpriseController {
         const vendor = await prisma.user.findFirst({
           where: {
             id: data.vendorId,
-            isEnterpriseVendor: true,
-            role: 'ENTERPRISE_VENDOR'
+            isEnterprise: true,
+            role: 'VENDOR'
           }
         })
 
@@ -206,7 +206,6 @@ export class EnterpriseController {
         const quoteRequest = await prisma.quoteRequest.create({
           data: {
             buyerCompanyId: userId,
-            // listingId is omitted for direct vendor quotes
             requestedQuantity: 1,
             projectSpecs: {
               projectType: data.projectType,
@@ -217,7 +216,6 @@ export class EnterpriseController {
               description: data.description,
               documentUrls: data.documentUrls || []
             },
-            deliveryDeadline: null,
             notes: data.description,
             projectType: data.projectType,
             systemSizeKw: data.systemSizeKw,
@@ -266,7 +264,6 @@ export class EnterpriseController {
         const quoteRequest = await prisma.quoteRequest.create({
           data: {
             buyerCompanyId: userId,
-            // Both listingId and vendorId are omitted for general quotes
             requestedQuantity: data.requestedQuantity || 1,
             projectSpecs: data.projectSpecs || {},
             deliveryDeadline: data.deliveryDeadline ? new Date(data.deliveryDeadline) : null,
@@ -684,11 +681,12 @@ export class EnterpriseController {
    */
   static async getVendors(req: Request, res: Response) {
     try {
-      const { city, state } = req.query
+      const { city, state, limit = '12', offset = '0' } = req.query
+      console.log('📊 Enterprise vendors request:', { city, state, limit, offset })
 
       const whereClause: any = {
-        isEnterpriseVendor: true,
-        role: 'ENTERPRISE_VENDOR'
+        isEnterprise: true,
+        role: 'VENDOR'
       }
 
       if (city) {
@@ -704,6 +702,15 @@ export class EnterpriseController {
           mode: 'insensitive'
         }
       }
+
+      console.log('🔍 Where clause:', whereClause)
+
+      // Get total count for pagination
+      const totalCount = await prisma.user.count({
+        where: whereClause
+      })
+
+      console.log('📈 Total count:', totalCount)
 
       const vendors = await prisma.user.findMany({
         where: whereClause,
@@ -725,8 +732,12 @@ export class EnterpriseController {
         },
         orderBy: {
           companyName: 'asc'
-        }
+        },
+        take: parseInt(limit as string),
+        skip: parseInt(offset as string)
       })
+
+      console.log('👥 Found vendors:', vendors.length)
 
       const vendorsWithProjectCount = vendors.map(vendor => ({
         id: vendor.id,
@@ -738,12 +749,25 @@ export class EnterpriseController {
         memberSince: vendor.createdAt
       }))
 
-      res.json({
+      const paginationInfo = {
+        total: totalCount,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        hasMore: parseInt(offset as string) + parseInt(limit as string) < totalCount
+      }
+
+      console.log('📄 Pagination info:', paginationInfo)
+
+      const response = {
         success: true,
-        data: vendorsWithProjectCount
-      })
+        data: vendorsWithProjectCount,
+        pagination: paginationInfo
+      }
+
+      console.log('📤 Sending response with data length:', vendorsWithProjectCount.length)
+      res.json(response)
     } catch (error) {
-      console.error('Error fetching vendors:', error)
+      console.error('❌ Error fetching vendors:', error)
       res.status(500).json({
         success: false,
         message: 'Failed to fetch vendors'
@@ -769,8 +793,8 @@ export class EnterpriseController {
       const vendor = await prisma.user.findFirst({
         where: {
           id: vendorId,
-          isEnterpriseVendor: true,
-          role: 'ENTERPRISE_VENDOR'
+          isEnterprise: true,
+          role: 'VENDOR'
         },
         select: {
           id: true,

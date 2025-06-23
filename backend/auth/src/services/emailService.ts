@@ -202,7 +202,93 @@ export class EmailService {
       logger.info(`Welcome email sent to: ${email}`)
     } catch (error) {
       logger.error('Failed to send welcome email:', error)
-      // Don't throw error for welcome email as it's not critical
+      throw new Error('Failed to send welcome email')
+    }
+  }
+
+  async sendEnterpriseApplicationEmail(email: string, applicationData: {
+    firstName: string
+    lastName: string
+    companyName: string
+    businessLicense?: string
+    certifications?: string[]
+    specialties?: string[]
+  }): Promise<void> {
+    const { firstName, lastName, companyName, businessLicense, certifications, specialties } = applicationData
+
+    // In development mode, just log the application
+    if (process.env.NODE_ENV === 'development') {
+      logger.info(`🏢 Enterprise vendor application received for ${email}:`)
+      logger.info(`   Name: ${firstName} ${lastName}`)
+      logger.info(`   Company: ${companyName}`)
+      logger.info(`   Business License: ${businessLicense || 'Not provided'}`)
+      logger.info(`   Certifications: ${certifications?.join(', ') || 'None'}`)
+      logger.info(`   Specialties: ${specialties?.join(', ') || 'None'}`)
+      return
+    }
+
+    // If no transporter in production, throw error
+    if (!this.transporter) {
+      throw new Error('Email service not configured')
+    }
+
+    const mailOptions = {
+      from: `"VoltBay" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Enterprise Vendor Application Received - VoltBay',
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0;">VoltBay</h1>
+            <p style="color: #6b7280; margin: 5px 0;">Solar Products Marketplace</p>
+          </div>
+          
+          <div style="background: #f0f9ff; padding: 30px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2563eb;">
+            <h2 style="color: #1f2937; margin-top: 0;">Application Received!</h2>
+            <p style="color: #4b5563; line-height: 1.6;">
+              Dear ${firstName} ${lastName},
+            </p>
+            <p style="color: #4b5563; line-height: 1.6;">
+              Thank you for your interest in becoming an Enterprise Vendor on VoltBay! We have received your application for <strong>${companyName}</strong> and our team is now reviewing your submission.
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #1f2937; margin-top: 0; margin-bottom: 15px;">Application Summary:</h3>
+              <ul style="color: #4b5563; line-height: 1.6; margin: 0; padding-left: 20px;">
+                <li><strong>Company:</strong> ${companyName}</li>
+                <li><strong>Contact:</strong> ${firstName} ${lastName}</li>
+                <li><strong>Email:</strong> ${email}</li>
+                ${businessLicense ? `<li><strong>Business License:</strong> ${businessLicense}</li>` : ''}
+                ${certifications?.length ? `<li><strong>Certifications:</strong> ${certifications.join(', ')}</li>` : ''}
+                ${specialties?.length ? `<li><strong>Specialties:</strong> ${specialties.join(', ')}</li>` : ''}
+              </ul>
+            </div>
+            
+            <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <h4 style="color: #92400e; margin: 0 0 10px 0;">⏱️ What happens next?</h4>
+              <ul style="color: #92400e; margin: 0; padding-left: 20px; line-height: 1.6;">
+                <li>Our team will review your application within 2-3 business days</li>
+                <li>We may contact you for additional information if needed</li>
+                <li>Once approved, you'll receive full access to enterprise features</li>
+                <li>You'll be able to manage large-scale solar projects and connect with customers</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div style="text-align: center; color: #9ca3af; font-size: 12px;">
+            <p>Questions about your application? Contact our support team at support@voltbay.com</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+          </div>
+        </div>
+      `
+    }
+
+    try {
+      await this.transporter.sendMail(mailOptions)
+      logger.info(`Enterprise application email sent to: ${email} for company: ${companyName}`)
+    } catch (error) {
+      logger.error('Failed to send enterprise application email:', error)
+      throw new Error('Failed to send enterprise application email')
     }
   }
 } 

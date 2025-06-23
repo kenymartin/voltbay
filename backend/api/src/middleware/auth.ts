@@ -114,4 +114,62 @@ export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: Nex
   }
 }
 
+// Role-based access control middleware
+export const requireEnterpriseBuyer = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required'
+    })
+  }
+
+  // Check if user is an enterprise buyer
+  if (req.user.role !== 'BUYER') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Enterprise buyer access required.'
+    })
+  }
+
+  next()
+}
+
+export const requireEnterpriseVendor = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required'
+    })
+  }
+
+  // Check if user is an enterprise vendor
+  if (req.user.role !== 'VENDOR') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Enterprise vendor access required.'
+    })
+  }
+
+  next()
+}
+
+export const requireEnterpriseUser = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required'
+    })
+  }
+
+  // Check if user is either enterprise buyer or vendor
+  if (req.user.role !== 'BUYER' && req.user.role !== 'VENDOR') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Enterprise access required.'
+    })
+  }
+
+  next()
+}
+
 export default authenticateUser 
