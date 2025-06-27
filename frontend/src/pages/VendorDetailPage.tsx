@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import apiService from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { toast } from 'react-toastify'
 
 interface VendorDetail {
   id: string
@@ -167,25 +168,36 @@ export default function VendorDetailPage() {
   }
 
   const handleQuoteSubmit = async () => {
-    if (!user || !vendor) return
+    console.log('🚀 handleQuoteSubmit called')
+    console.log('User:', user)
+    console.log('Vendor:', vendor)
+    console.log('Quote Request:', quoteRequest)
+    
+    if (!user || !vendor) {
+      console.log('❌ Missing user or vendor data')
+      return
+    }
 
     try {
       // First upload documents if any
       const documentUrls: string[] = []
       
-      for (const file of uploadedDocuments) {
+      if (uploadedDocuments.length > 0) {
         const formData = new FormData()
-        formData.append('file', file)
+        uploadedDocuments.forEach(file => {
+          formData.append('documents', file)
+        })
         
-        const uploadResponse = await apiService.post('/api/upload', formData, {
+        const uploadResponse = await apiService.post('/api/upload/quote-documents', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         }) as any
         
         if (uploadResponse.success) {
-          documentUrls.push(uploadResponse.data.url)
+          documentUrls.push(...uploadResponse.data.documentUrls)
         }
       }
 
+      console.log('📤 Submitting quote request to API...')
       // Submit quote request
       const response = await apiService.post('/api/enterprise/quote-request', {
         vendorId: vendor.id,
@@ -193,8 +205,10 @@ export default function VendorDetailPage() {
         documentUrls
       }) as any
 
+      console.log('✅ Quote request response:', response)
+
       if (response.success) {
-        alert('Quote request submitted successfully!')
+        toast.success('Quote request submitted successfully!')
         setShowQuoteModal(false)
         setQuoteRequest({
           projectType: '',
@@ -206,10 +220,13 @@ export default function VendorDetailPage() {
           documents: []
         })
         setUploadedDocuments([])
+      } else {
+        console.log('❌ Quote request failed:', response)
+        toast.error('Failed to submit quote request: ' + (response.message || 'Unknown error'))
       }
     } catch (err) {
-      console.error('Error submitting quote request:', err)
-      alert('Failed to submit quote request')
+      console.error('❌ Error submitting quote request:', err)
+      alert('An error occurred while submitting the quote request. Please try again.')
     }
   }
 
@@ -328,7 +345,10 @@ export default function VendorDetailPage() {
                   Send Message
                 </button>
                 <button
-                  onClick={() => setShowQuoteModal(true)}
+                  onClick={() => {
+                    console.log('🔘 Request Quote button clicked')
+                    setShowQuoteModal(true)
+                  }}
                   className="flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   <FileText className="h-5 w-5 mr-2" />
@@ -772,7 +792,10 @@ export default function VendorDetailPage() {
                 Cancel
               </button>
               <button
-                onClick={handleQuoteSubmit}
+                onClick={() => {
+                  console.log('📝 Submit Quote Request button clicked')
+                  handleQuoteSubmit()
+                }}
                 disabled={!quoteRequest.projectType || !quoteRequest.systemSizeKw || !quoteRequest.location}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
