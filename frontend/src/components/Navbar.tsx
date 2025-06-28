@@ -15,7 +15,8 @@ import {
   Bell,
   Wallet,
   HardHat,
-  ArrowLeft
+  ArrowLeft,
+  Building2
 } from 'lucide-react'
 import NotificationDropdown from './NotificationDropdown'
 
@@ -143,14 +144,15 @@ export default function Navbar() {
                   {shouldShowFeature(user, 'canAccessEnterprise') && (
                     <Link
                       to="/enterprise"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium space-x-1 ${
+                      className={`flex items-center px-4 py-2 text-sm ${
                         location.pathname === '/enterprise' 
-                          ? 'border-blue-500 text-blue-600' 
-                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                          ? 'text-blue-600 bg-blue-50 border-l-4 border-blue-600 font-medium' 
+                          : 'text-gray-700 hover:bg-gray-100'
                       }`}
+                      onClick={() => setIsMenuOpen(false)}
                     >
-                      <HardHat className="h-4 w-4" />
-                      <span>Enterprise</span>
+                      <HardHat className="h-4 w-4 mr-2" />
+                      Enterprise
                     </Link>
                   )}
                   {shouldShowFeature(user, 'canAccessROICalculator') && (
@@ -235,7 +237,7 @@ export default function Navbar() {
 
                   {/* Profile dropdown menu */}
                   {isProfileMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" ref={profileMenuRef}>
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50" ref={profileMenuRef}>
                       <Link
                         to="/dashboard"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -251,13 +253,37 @@ export default function Navbar() {
                         <Wallet className="h-4 w-4" />
                         <span>Wallet</span>
                       </Link>
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        Profile
-                      </Link>
+                      {/* Profiles section for enterprise users */}
+                      {isEnterpriseUser(user) ? (
+                        <>
+                          <div className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider">Profiles</div>
+                          <Link
+                            to="/company/profile/manage"
+                            className="block px-6 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            <Building2 className="h-4 w-4" />
+                            <span>Company</span>
+                          </Link>
+                          <Link
+                            to="/profile"
+                            className="block px-6 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            <User className="h-4 w-4" />
+                            <span>Personal</span>
+                          </Link>
+                        </>
+                      ) : (
+                        <Link
+                          to="/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      )}
                       <Link
                         to="/messages"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -349,7 +375,7 @@ export default function Navbar() {
           <div className="pt-2 pb-3 space-y-1">
             {!isEnterpriseMode ? (
               <>
-                {shouldShowFeature(user, 'canSeeBrowseProducts') && (
+                {shouldShowFeature(user, 'canAccessMarketplace') && (
                   <Link
                     to="/products"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -358,7 +384,7 @@ export default function Navbar() {
                     Browse
                   </Link>
                 )}
-                {shouldShowFeature(user, 'canSeeAuctions') && (
+                {shouldShowFeature(user, 'canAccessAuctions') && (
                   <Link
                     to="/auctions"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -367,7 +393,7 @@ export default function Navbar() {
                     Auctions
                   </Link>
                 )}
-                {shouldShowFeature(user, 'canSeeCategories') && (
+                {shouldShowFeature(user, 'canAccessCategories') && (
                   <Link
                     to="/categories"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -376,7 +402,7 @@ export default function Navbar() {
                     Categories
                   </Link>
                 )}
-                {shouldShowFeature(user, 'canSeeEnterprise') && (
+                {shouldShowFeature(user, 'canAccessEnterprise') && (
                   <Link
                     to="/enterprise"
                     className="flex items-center px-4 py-2 text-sm text-sky-600 hover:bg-gray-100 font-medium"
@@ -400,7 +426,7 @@ export default function Navbar() {
                     Back to VoltBay
                   </Link>
                 )}
-                {shouldShowFeature(user, 'canSeeEnterprise') && (
+                {shouldShowFeature(user, 'canAccessEnterprise') && (
                   <Link
                     to="/enterprise"
                     className={`flex items-center px-4 py-2 text-sm ${
@@ -414,7 +440,7 @@ export default function Navbar() {
                     Enterprise
                   </Link>
                 )}
-                {shouldShowFeature(user, 'canSeeROICalculator') && (
+                {shouldShowFeature(user, 'canAccessROICalculator') && (
                   <Link
                     to="/roi-calculator"
                     className={`block px-4 py-2 text-sm ${
@@ -476,13 +502,37 @@ export default function Navbar() {
                   <Wallet className="h-5 w-5 mr-3" />
                   Wallet
                 </Link>
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Profile
-                </Link>
+                {/* Profiles section for enterprise users */}
+                {isEnterpriseUser(user) ? (
+                  <>
+                    <div className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider">Profiles</div>
+                    <Link
+                      to="/company/profile/manage"
+                      className="flex items-center px-6 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Building2 className="h-5 w-5 mr-3" />
+                      Company
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-6 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="h-5 w-5 mr-3" />
+                      Personal
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    to="/profile"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5 mr-3" />
+                    Profile
+                  </Link>
+                )}
                 {user?.role === 'ADMIN' && (
                   <Link
                     to="/admin"

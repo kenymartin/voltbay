@@ -184,6 +184,7 @@ export class AuthService {
         role: true,
         verified: true,
         isEnterprise: true,
+        isEmailVerified: true,
         companyName: true
       }
     })
@@ -198,9 +199,9 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401)
     }
 
-    // Check if enterprise account is approved
-    if (user.isEnterprise && !user.verified) {
-      throw new AppError('Your enterprise account is still under review. Please wait for approval.', 403)
+    // Check if enterprise account has verified email (they can login but with limited access)
+    if (user.isEnterprise && !user.isEmailVerified) {
+      throw new AppError('Please verify your email address before accessing your enterprise account.', 403)
     }
 
     // Generate tokens

@@ -32,10 +32,12 @@ import OrderDetailPage from './pages/OrderDetailPage'
 import DashboardPage from './pages/user/DashboardPage'
 import MessagesPage from './pages/user/MessagesPage'
 import MyProductsPage from './pages/user/MyProductsPage'
+import VendorProfileManagementPage from './pages/user/VendorProfileManagementPage'
 import WalletPage from './pages/WalletPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import CreateCategoryPage from './pages/admin/CreateCategoryPage'
 import NotFoundPage from './pages/NotFoundPage'
+import CompanyProfilePage from './pages/CompanyProfilePage'
 
 function App() {
   const { user, checkAuth } = useAuthStore()
@@ -129,6 +131,11 @@ function App() {
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/products/my" element={<MyProductsPage />} />
           <Route path="/wallet" element={<WalletPage />} />
+
+          {/* Company Profile Routes */}
+          <Route path="/company/profile/me" element={<CompanyProfilePage />} />
+          <Route path="/company/profile/manage" element={<VendorProfileManagementPage />} />
+          <Route path="/company-profile/:companyId" element={<CompanyProfilePage />} />
         </Route>
 
         {/* Admin routes */}

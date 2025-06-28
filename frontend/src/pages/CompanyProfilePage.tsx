@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiService from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { shouldShowFeature } from '../utils/userPermissions'
 import { 
   Building2, 
   MapPin, 
@@ -38,12 +39,16 @@ interface QuoteRequest {
 }
 
 export default function CompanyProfilePage() {
-  const { id } = useParams()
+  const { id: paramId } = useParams()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [editMode, setEditMode] = useState(false)
   const [form, setForm] = useState<any>({})
   const [docFile, setDocFile] = useState<File | null>(null)
+
+  // Determine if viewing own profile and the actual ID to use
+  const isViewingOwnProfile = paramId === 'me'
+  const id = isViewingOwnProfile ? user?.id : paramId
 
   // Quote request state
   const [showQuoteModal, setShowQuoteModal] = useState(false)
@@ -59,47 +64,52 @@ export default function CompanyProfilePage() {
   const [uploadedDocuments, setUploadedDocuments] = useState<File[]>([])
 
   // Check if current user can edit this profile
+  // Only allow editing when explicitly viewing via /me route or admin
   const canEdit = user && (
-    user.id === id || // User can edit their own profile
-    user.role === 'ADMIN' // Admin can edit any profile
+    user.role === 'ADMIN' || // Admin can edit any profile
+    isViewingOwnProfile // User viewing their own profile via /me route (edit mode)
   )
 
   // Fetch company profile
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['companyProfile', id],
+    queryKey: ['companyProfile', paramId], // Use paramId for cache key consistency
     queryFn: async () => {
-      const res = await apiService.get(`/api/company-profile/${id}`)
+      const endpoint = isViewingOwnProfile ? '/api/company-profile/me' : `/api/company-profile/${id}`
+      const res = await apiService.get(endpoint)
       return res.data
     },
-    enabled: !!id
+    enabled: !!(id || isViewingOwnProfile)
   })
 
-  // Fetch company documents
+  // Fetch company documents - DISABLED: CompanyDocument model doesn't exist in schema
   const { data: docs, refetch: refetchDocs } = useQuery({
-    queryKey: ['companyDocs', id],
+    queryKey: ['companyDocs', paramId],
     queryFn: async () => {
-      const res = await apiService.get(`/api/company-profile/${id}/documents`)
-      return res.data
+      // Documents endpoint not implemented
+      return []
     },
-    enabled: !!id
+    enabled: false // Disabled until CompanyDocument model is implemented
   })
 
   // Update profile mutation
   const updateProfile = useMutation({
-    mutationFn: (payload: any) => apiService.put(`/api/company-profile/${id}`, payload),
+    mutationFn: (payload: any) => {
+      const actualId = isViewingOwnProfile ? user?.id : id
+      return apiService.put(`/api/company-profile/${actualId}`, payload)
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyProfile', id] })
+      queryClient.invalidateQueries({ queryKey: ['companyProfile', paramId] })
       setEditMode(false)
     }
   })
 
-  // Upload document mutation
+  // Upload document mutation - DISABLED: CompanyDocument model doesn't exist in schema
   const uploadDoc = useMutation({
-    mutationFn: (payload: any) => apiService.post(`/api/company-profile/${id}/documents`, payload),
-    onSuccess: () => {
-      refetchDocs()
-      setDocFile(null)
-    }
+    mutationFn: (payload: any) => {
+      // Document upload not implemented
+      return Promise.resolve({ success: false, message: 'Document upload not implemented' })
+    },
+    enabled: false // Disabled until CompanyDocument model is implemented
   })
 
   useEffect(() => {
@@ -239,7 +249,7 @@ export default function CompanyProfilePage() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
-              {!canEdit && (
+              {!canEdit && shouldShowFeature(user, 'canRequestQuote') && (
                 <button 
                   onClick={() => {
                     console.log('🔘 Request Quote button clicked from CompanyProfilePage')
@@ -573,7 +583,7 @@ export default function CompanyProfilePage() {
             </div>
 
             {/* Quick Actions for Buyers */}
-            {!canEdit && (
+            {!canEdit && shouldShowFeature(user, 'canRequestQuote') && (
               <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-sm p-6 text-white">
                 <h2 className="text-xl font-bold mb-4">Ready to Get Started?</h2>
                 <p className="text-blue-100 mb-6 text-sm">

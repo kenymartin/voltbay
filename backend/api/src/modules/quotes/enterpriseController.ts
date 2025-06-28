@@ -179,6 +179,26 @@ export class EnterpriseController {
         })
       }
 
+      // Verify user is an enterprise buyer and is verified
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isEnterprise: true, role: true, verified: true }
+      })
+
+      if (!user || !user.isEnterprise || user.role !== 'BUYER') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only enterprise buyers can request quotes'
+        })
+      }
+
+      if (!user.verified) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your enterprise account must be approved by an administrator before you can request quotes'
+        })
+      }
+
       const data = req.body
 
       // Handle direct vendor quote requests (from vendor detail page)

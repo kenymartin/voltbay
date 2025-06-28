@@ -902,10 +902,16 @@ export default function DashboardPage() {
 
         <div className="mt-6">
           <button 
-            onClick={() => navigate('/profile')}
+            onClick={() => {
+              if (isEnterpriseUser(user)) {
+                navigate("/company/profile/manage")
+              } else {
+                navigate('/profile')
+              }
+            }}
             className="btn btn-primary"
           >
-            Edit Profile
+            {isEnterpriseUser(user) ? 'Edit Company Profile' : 'Edit Profile'}
           </button>
         </div>
       </div>

@@ -12,7 +12,7 @@ router.get('/vendor/:vendorId', authMiddleware.authenticate, authMiddleware.requ
 router.post('/listing', authMiddleware.authenticate, authMiddleware.requireRole(['VENDOR']), EnterpriseController.createListing)
 router.get('/listings', EnterpriseController.getListings) // Public for buyers to see
 
-// Quote Request Routes - FOR BUYERS TO REQUEST QUOTES
+// Quote Request Routes - FOR ENTERPRISE BUYERS TO REQUEST QUOTES (verification checked in controller)
 router.post('/quote-request', authMiddleware.authenticate, authMiddleware.requireRole(['BUYER']), EnterpriseController.createQuoteRequest)
 router.get('/my-requests', authMiddleware.authenticate, EnterpriseController.getMyRequests)
 

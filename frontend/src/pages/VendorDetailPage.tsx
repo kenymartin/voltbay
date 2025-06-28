@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import apiService from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { shouldShowFeature } from '../utils/userPermissions'
 import { toast } from 'react-toastify'
 
 interface VendorDetail {
@@ -337,23 +338,37 @@ export default function VendorDetailPage() {
             {/* Action Buttons */}
             {user && (
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <button
-                  onClick={() => setShowMessageModal(true)}
-                  className="flex items-center justify-center px-6 py-3 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
-                >
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Send Message
-                </button>
-                <button
-                  onClick={() => {
-                    console.log('🔘 Request Quote button clicked')
-                    setShowQuoteModal(true)
-                  }}
-                  className="flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  <FileText className="h-5 w-5 mr-2" />
-                  Request Quote
-                </button>
+                {shouldShowFeature(user, 'canRequestQuote') ? (
+                  <>
+                    <button
+                      onClick={() => setShowMessageModal(true)}
+                      className="flex items-center justify-center px-6 py-3 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+                    >
+                      <MessageCircle className="h-5 w-5 mr-2" />
+                      Send Message
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('🔘 Request Quote button clicked')
+                        setShowQuoteModal(true)
+                      }}
+                      className="flex items-center justify-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      <FileText className="h-5 w-5 mr-2" />
+                      Request Quote
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full bg-gray-100 border border-gray-300 rounded-lg px-6 py-4 text-center">
+                    <div className="flex items-center justify-center space-x-2 text-gray-500 mb-1">
+                      <HardHat className="h-5 w-5" />
+                      <span className="font-medium">Account Approval Required</span>
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      Contact admin to send messages and request quotes
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
