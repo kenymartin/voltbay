@@ -59,6 +59,7 @@ export function getUserType(user: User | null): UserType {
 
 export function getUserPermissions(user: User | null): UserPermissions {
   const userType = getUserType(user)
+  const isApproved = isEnterpriseApproved(user)
   
   switch (userType) {
     case 'ENTERPRISE_VENDOR':
@@ -66,31 +67,31 @@ export function getUserPermissions(user: User | null): UserPermissions {
         // Navigation
         canAccessMarketplace: false,
         canAccessAuctions: false,
-        canAccessEnterprise: false,
+        canAccessEnterprise: true,
         canAccessROICalculator: false, // ROI Calculator is exclusively for buyers
         canAccessCategories: false,
         
         // Dashboard
-        canViewMyListings: true, // Services/Listings
+        canViewMyListings: isApproved, // Services/Listings - only if approved
         canViewMyBids: false,
-        canViewMyOrders: true, // Contracts/Orders
-        canViewMessages: true,
-        canViewWallet: true,
-        canViewAnalytics: true,
+        canViewMyOrders: isApproved, // Contracts/Orders - only if approved
+        canViewMessages: true, // Can always view messages
+        canViewWallet: isApproved, // Wallet access only if approved
+        canViewAnalytics: isApproved,
         
         // Actions
-        canCreateListing: true, // Create services
+        canCreateListing: isApproved, // Create services - only if approved
         canPlaceBid: false,
         canBuyNow: false,
-        canSell: true,
+        canSell: isApproved, // Can only sell if approved
         canRequestQuote: false,
-        canManageServices: true,
+        canManageServices: isApproved, // Service management only if approved
         
         // UI elements
         showShoppingCart: false,
         showSellButton: false, // They manage services differently
         showBiddingFeatures: false,
-        showQuoteFeatures: true
+        showQuoteFeatures: isApproved // Quote features only if approved
       }
       
     case 'ENTERPRISE_BUYER':
@@ -99,30 +100,30 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canAccessMarketplace: false,
         canAccessAuctions: false,
         canAccessEnterprise: true,
-        canAccessROICalculator: true,
+        canAccessROICalculator: true, // ROI Calculator available for all enterprise buyers
         canAccessCategories: false,
         
         // Dashboard
         canViewMyListings: false,
         canViewMyBids: false,
-        canViewMyOrders: true, // Contracts/Orders
-        canViewMessages: true,
-        canViewWallet: true,
-        canViewAnalytics: true,
+        canViewMyOrders: isApproved, // Contracts/Orders - only if approved
+        canViewMessages: true, // Can always view messages
+        canViewWallet: isApproved, // Wallet access only if approved
+        canViewAnalytics: isApproved,
         
         // Actions
         canCreateListing: false,
         canPlaceBid: false,
         canBuyNow: false,
         canSell: false,
-        canRequestQuote: true,
+        canRequestQuote: isApproved, // Quote requests only if approved
         canManageServices: false,
         
         // UI elements
         showShoppingCart: false,
         showSellButton: false,
         showBiddingFeatures: false,
-        showQuoteFeatures: true
+        showQuoteFeatures: isApproved // Quote features only if approved
       }
       
     case 'VENDOR':
@@ -258,6 +259,11 @@ export function getUserPermissions(user: User | null): UserPermissions {
 export function isEnterpriseUser(user: User | null): boolean {
   if (!user) return false
   return user.isEnterprise === true
+}
+
+export function isEnterpriseApproved(user: User | null): boolean {
+  if (!user || !user.isEnterprise) return false
+  return user.verified === true
 }
 
 export function shouldShowFeature(user: User | null, feature: keyof UserPermissions): boolean {

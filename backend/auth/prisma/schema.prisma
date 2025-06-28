@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,519 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                        String                      @id @default(cuid())
+  email                     String                      @unique
+  password                  String
+  firstName                 String?
+  lastName                  String?
+  role                      UserRole                    @default(BUYER)
+  verified                  Boolean                     @default(false)
+  avatar                    String?
+  phone                     String?
+  street                    String?
+  city                      String?
+  state                     String?
+  zipCode                   String?
+  country                   String?
+  stripeCustomerId          String?                     @unique
+  stripeAccountId           String?                     @unique
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  emailVerificationToken    String?
+  emailVerificationExpires  DateTime?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
+  companyName               String?
+  locationCity              String?
+  locationState             String?
+  businessLicense           String?
+  certifications            String[]
+  specialties               String[]
+  isEnterprise              Boolean                     @default(false)
+  about                     String?
+  representativeName        String?
+  isEmailVerified           Boolean                     @default(false)
+  website                   String?
+  bids                      Bid[]
+  company_documents         company_documents[]
+  conversation_participants conversation_participants[]
+  enterprise_listings       enterprise_listings[]
+  receivedMessages          Message[]                   @relation("ReceivedMessages")
+  sentMessages              Message[]                   @relation("SentMessages")
+  notifications             Notification[]
+  ordersAsBuyer             Order[]                     @relation("BuyerOrders")
+  ordersAsSeller            Order[]                     @relation("SellerOrders")
+  payments                  payments[]
+  products                  Product[]
+  quote_requests            quote_requests[]
+  quote_responses           quote_responses[]
+  refreshTokens             RefreshToken[]
+  reviews                   Review[]
+  roi_simulations           roi_simulations[]
+  vendor_certifications     vendor_certifications[]
+  vendor_documents          vendor_documents[]
+  vendor_profiles           vendor_profiles?
+  vendor_projects           vendor_projects[]
+  vendor_specialties        vendor_specialties[]
+  wallets                   wallets?
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id                  String                @id @default(cuid())
+  name                String                @unique
+  description         String?
+  parentId            String?
+  imageUrl            String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  parent              Category?             @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children            Category[]            @relation("CategoryHierarchy")
+  enterprise_listings enterprise_listings[]
+  products            Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String
+  price          Decimal                @db.Decimal(10, 2)
+  imageUrls      String[]
+  status         ProductStatus          @default(DRAFT)
+  condition      ProductCondition
+  categoryId     String
+  ownerId        String
+  isAuction      Boolean                @default(false)
+  auctionEndDate DateTime?
+  currentBid     Decimal?               @db.Decimal(10, 2)
+  minimumBid     Decimal?               @db.Decimal(10, 2)
+  buyNowPrice    Decimal?               @db.Decimal(10, 2)
+  street         String?
+  city           String?
+  state          String?
+  zipCode        String?
+  country        String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  bids           Bid[]
+  conversations  conversations[]
+  messages       Message[]
+  orders         Order[]
+  specifications ProductSpecification[]
+  category       Category               @relation(fields: [categoryId], references: [id])
+  owner          User                   @relation(fields: [ownerId], references: [id])
+  reviews        Review[]
+
+  @@map("products")
+}
+
+model ProductSpecification {
+  id        String  @id @default(cuid())
+  productId String
+  name      String
+  value     String
+  unit      String?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_specifications")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  amount    Decimal  @db.Decimal(10, 2)
+  isWinning Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("bids")
+}
+
+model Order {
+  id                      String       @id @default(cuid())
+  buyerId                 String
+  sellerId                String
+  productId               String
+  status                  OrderStatus  @default(PENDING)
+  totalAmount             Decimal      @db.Decimal(10, 2)
+  shippingStreet          String
+  shippingCity            String
+  shippingState           String
+  shippingZipCode         String
+  shippingCountry         String
+  paymentType             PaymentType?
+  paymentLast4            String?
+  paymentExpiryMonth      Int?
+  paymentExpiryYear       Int?
+  paymentBrand            String?
+  stripePaymentIntentId   String?      @unique
+  stripeFee               Decimal?     @db.Decimal(10, 2)
+  platformFee             Decimal?     @db.Decimal(10, 2)
+  sellerAmount            Decimal?     @db.Decimal(10, 2)
+  trackingNumber          String?
+  notes                   String?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  stripeCheckoutSessionId String?
+  buyer                   User         @relation("BuyerOrders", fields: [buyerId], references: [id])
+  product                 Product      @relation(fields: [productId], references: [id])
+  seller                  User         @relation("SellerOrders", fields: [sellerId], references: [id])
+  payments                payments[]
+  reviews                 Review[]
+
+  @@map("orders")
+}
+
+model Message {
+  id             String         @id @default(cuid())
+  senderId       String
+  receiverId     String
+  content        String
+  isRead         Boolean        @default(false)
+  productId      String?
+  sentAt         DateTime       @default(now())
+  attachments    String?
+  context        String?
+  conversationId String?
+  messageType    MessageType    @default(GENERAL)
+  readAt         DateTime?
+  conversations  conversations? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  product        Product?       @relation(fields: [productId], references: [id])
+  receiver       User           @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender         User           @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      @db.SmallInt
+  comment   String?
+  productId String
+  authorId  String
+  orderId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model company_documents {
+  id         String   @id
+  userId     String
+  name       String
+  url        String
+  uploadedAt DateTime @default(now())
+  users      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model conversation_participants {
+  id             String        @id
+  conversationId String
+  userId         String
+  joinedAt       DateTime      @default(now())
+  lastReadAt     DateTime?
+  role           String?
+  conversations  conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  users          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model conversations {
+  id                        String                      @id
+  type                      ConversationType            @default(GENERAL)
+  status                    ConversationStatus          @default(ACTIVE)
+  subject                   String?
+  productId                 String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime
+  context                   String?
+  conversation_participants conversation_participants[]
+  products                  Product?                    @relation(fields: [productId], references: [id])
+  messages                  Message[]
+}
+
+model enterprise_listings {
+  id             String                  @id
+  name           String
+  description    String
+  categoryId     String
+  vendorId       String
+  specs          Json?
+  location       String
+  deliveryTime   String?
+  basePrice      Decimal?                @db.Decimal(10, 2)
+  priceUnit      String?
+  status         EnterpriseListingStatus @default(DRAFT)
+  quoteOnly      Boolean                 @default(true)
+  imageUrls      String[]
+  documentUrls   String[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime
+  categories     Category                @relation(fields: [categoryId], references: [id])
+  users          User                    @relation(fields: [vendorId], references: [id])
+  quote_requests quote_requests[]
+}
+
+model escrows {
+  id            String            @id
+  orderId       String            @unique
+  buyerWalletId String
+  sellerId      String
+  amount        Decimal           @db.Decimal(10, 2)
+  status        TransactionStatus @default(PENDING)
+  reason        String?
+  releasedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime
+  wallets       wallets           @relation(fields: [buyerWalletId], references: [id])
+}
+
+model payments {
+  id                    String        @id
+  userId                String
+  orderId               String?
+  stripePaymentIntentId String        @unique
+  stripeChargeId        String?
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("usd")
+  status                PaymentStatus
+  description           String?
+  metadata              Json?
+  paymentMethodType     String?
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+  stripeFee             Decimal?      @db.Decimal(10, 2)
+  platformFee           Decimal?      @db.Decimal(10, 2)
+  netAmount             Decimal?      @db.Decimal(10, 2)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime
+  paidAt                DateTime?
+  refundedAt            DateTime?
+  orders                Order?        @relation(fields: [orderId], references: [id])
+  users                 User          @relation(fields: [userId], references: [id])
+}
+
+model quote_requests {
+  id                  String               @id
+  buyerCompanyId      String
+  listingId           String?
+  requestedQuantity   Int
+  projectSpecs        Json?
+  deliveryDeadline    DateTime?
+  notes               String?
+  projectType         ProjectType?
+  systemSizeKw        Decimal?             @db.Decimal(10, 2)
+  location            String?
+  mountingType        MountingType?
+  budget              Decimal?             @db.Decimal(12, 2)
+  status              QuoteRequestStatus   @default(PENDING)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime
+  expiresAt           DateTime?
+  users               User                 @relation(fields: [buyerCompanyId], references: [id])
+  enterprise_listings enterprise_listings? @relation(fields: [listingId], references: [id])
+  quote_responses     quote_responses[]
+}
+
+model quote_responses {
+  id                 String              @id
+  quoteRequestId     String
+  vendorId           String
+  proposedTotalPrice Decimal             @db.Decimal(12, 2)
+  deliveryEstimate   String?
+  validUntil         DateTime?
+  message            String?
+  pdfProposalUrl     String?
+  lineItems          Json?
+  paymentTerms       String?
+  warrantyTerms      String?
+  status             QuoteResponseStatus @default(PENDING)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime
+  quote_requests     quote_requests      @relation(fields: [quoteRequestId], references: [id])
+  users              User                @relation(fields: [vendorId], references: [id])
+}
+
+model roi_simulations {
+  id               String       @id
+  userId           String?
+  projectType      ProjectType
+  location         String
+  systemSizeKw     Decimal      @db.Decimal(10, 2)
+  panelWattage     Int?
+  mountingType     MountingType
+  targetBudget     Decimal?     @db.Decimal(12, 2)
+  estimatedPanels  Int
+  estimatedCost    Decimal      @db.Decimal(12, 2)
+  roiYears         Decimal      @db.Decimal(5, 2)
+  co2OffsetTons    Decimal      @db.Decimal(8, 2)
+  installationTime String?
+  freightCost      Decimal?     @db.Decimal(10, 2)
+  energyProduction Decimal?     @db.Decimal(10, 2)
+  createdAt        DateTime     @default(now())
+  users            User?        @relation(fields: [userId], references: [id])
+}
+
+model vendor_certifications {
+  id              String          @id
+  vendorId        String
+  profileId       String
+  name            String
+  issuer          String
+  number          String?
+  issuedDate      DateTime?
+  expiryDate      DateTime?
+  description     String?
+  documentUrl     String?
+  isVerified      Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  vendor_profiles vendor_profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  users           User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model vendor_documents {
+  id              String          @id
+  vendorId        String
+  profileId       String
+  name            String
+  description     String?
+  type            DocumentType
+  url             String
+  fileSize        Int?
+  mimeType        String?
+  isPublic        Boolean         @default(false)
+  expiryDate      DateTime?
+  uploadedAt      DateTime        @default(now())
+  updatedAt       DateTime
+  vendor_profiles vendor_profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  users           User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model vendor_profiles {
+  id                    String                  @id
+  vendorId              String                  @unique
+  about                 String?
+  yearsExperience       Int?
+  employeeCount         Int?
+  serviceAreas          String[]                @default([])
+  website               String?
+  linkedIn              String?
+  facebook              String?
+  instagram             String?
+  twitter               String?
+  businessHours         String?
+  emergencyContact      String?
+  insuranceInfo         String?
+  bondingInfo           String?
+  warrantyInfo          String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  vendor_certifications vendor_certifications[]
+  vendor_documents      vendor_documents[]
+  users                 User                    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendor_specialties    vendor_specialties[]
+}
+
+model vendor_projects {
+  id             String       @id
+  vendorId       String
+  title          String
+  description    String?
+  status         String
+  projectType    ProjectType?
+  systemSizeKw   Decimal?     @db.Decimal(10, 2)
+  location       String?
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  actualValue    Decimal?     @db.Decimal(12, 2)
+  challenges     String?
+  clientName     String?
+  duration       String?
+  estimatedValue Decimal?     @db.Decimal(12, 2)
+  imageUrls      String[]     @default([])
+  solutions      String?
+  users          User         @relation(fields: [vendorId], references: [id])
+}
+
+model vendor_specialties {
+  id              String          @id
+  vendorId        String
+  profileId       String
+  name            String
+  description     String?
+  yearsExp        Int?
+  isVerified      Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  vendor_profiles vendor_profiles @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  users           User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+}
+
+model wallet_transactions {
+  id          String            @id
+  walletId    String
+  type        TransactionType
+  amount      Decimal           @db.Decimal(10, 2)
+  status      TransactionStatus @default(PENDING)
+  description String
+  reference   String?
+  metadata    Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime
+  wallets     wallets           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+}
+
+model wallets {
+  id                  String                @id
+  userId              String                @unique
+  balance             Decimal               @default(0.00) @db.Decimal(10, 2)
+  lockedBalance       Decimal               @default(0.00) @db.Decimal(10, 2)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  escrows             escrows[]
+  wallet_transactions wallet_transactions[]
+  users               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {
@@ -47,6 +557,7 @@ enum PaymentType {
   DEBIT_CARD
   PAYPAL
   BANK_TRANSFER
+  STRIPE
 }
 
 enum NotificationType {
@@ -59,232 +570,111 @@ enum NotificationType {
   ORDER_DELIVERED
   MESSAGE_RECEIVED
   REVIEW_RECEIVED
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  role      UserRole @default(BUYER)
-  verified  Boolean  @default(false)
-  avatar    String?
-  phone     String?
-  
-  // Address fields
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  // Enterprise and company fields
-  isEnterprise       Boolean @default(false)
-  companyName        String?
-  locationCity       String?
-  locationState      String?
-  businessLicense    String?
-  certifications     String[]
-  specialties        String[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  products         Product[]
-  bids             Bid[]
-  ordersAsBuyer    Order[]   @relation("BuyerOrders")
-  ordersAsSeller   Order[]   @relation("SellerOrders")
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  reviews          Review[]
-  notifications    Notification[]
-  
-  // Auth-related
-  emailVerificationToken String?
-  emailVerificationExpires DateTime?
-  passwordResetToken     String?
-  passwordResetExpires   DateTime?
-  refreshTokens          RefreshToken[]
-  
-  @@map("users")
+enum ConversationStatus {
+  ACTIVE
+  ARCHIVED
+  CLOSED
 }
 
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  
-  @@map("refresh_tokens")
+enum ConversationType {
+  DIRECT_MESSAGE
+  PRODUCT_INQUIRY
+  VENDOR_INQUIRY
+  SUPPORT_TICKET
+  QUOTE_DISCUSSION
+  GENERAL
 }
 
-model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  parentId    String?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryHierarchy")
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relations
-  products Product[]
-  
-  @@map("categories")
+enum DocumentType {
+  LICENSE
+  CERTIFICATION
+  INSURANCE
+  BOND
+  WARRANTY
+  PORTFOLIO
+  REFERENCE
+  CONTRACT
+  PERMIT
+  INSPECTION_REPORT
+  SAFETY_CERTIFICATE
+  TAX_DOCUMENT
+  OTHER
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  price       Decimal  @db.Decimal(10, 2)
-  imageUrls   String[]
-  status      ProductStatus @default(DRAFT)
-  condition   ProductCondition
-  
-  // Category
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  
-  // Owner
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  
-  // Auction fields
-  isAuction       Boolean   @default(false)
-  auctionEndDate  DateTime?
-  currentBid      Decimal?  @db.Decimal(10, 2)
-  minimumBid      Decimal?  @db.Decimal(10, 2)
-  buyNowPrice     Decimal?  @db.Decimal(10, 2)
-  
-  // Location
-  street    String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  specifications ProductSpecification[]
-  bids           Bid[]
-  orders         Order[]
-  messages       Message[]
-  reviews        Review[]
-  
-  @@map("products")
+enum EnterpriseListingStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
 }
 
-model ProductSpecification {
-  id        String  @id @default(cuid())
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String
-  value     String
-  unit      String?
-  
-  @@map("product_specifications")
+enum MessageType {
+  GENERAL
+  PRODUCT_INQUIRY
+  QUOTE_DISCUSSION
+  VENDOR_INQUIRY
+  SUPPORT
 }
 
-model Bid {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  amount    Decimal  @db.Decimal(10, 2)
-  isWinning Boolean  @default(false)
-  createdAt DateTime @default(now())
-  
-  @@map("bids")
+enum MountingType {
+  FIXED
+  ADJUSTABLE
+  TRACKER
+  GROUND_MOUNT
+  ROOF_MOUNT
 }
 
-model Order {
-  id            String      @id @default(cuid())
-  orderNumber   String      @unique
-  buyerId       String
-  buyer         User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId      String
-  seller        User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  productId     String
-  product       Product     @relation(fields: [productId], references: [id])
-  quantity      Int         @default(1)
-  totalAmount   Decimal  @db.Decimal(10, 2)
-  status        OrderStatus @default(PENDING)
-  paymentType   PaymentType
-  
-  // Shipping
-  shippingStreet  String?
-  shippingCity    String?
-  shippingState   String?
-  shippingZip     String?
-  shippingCountry String?
-  
-  // Tracking
-  trackingNumber String?
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  reviews Review[]
-  
-  @@map("orders")
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
 }
 
-model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  content    String
-  isRead     Boolean  @default(false)
-  productId  String?
-  product    Product? @relation(fields: [productId], references: [id])
-  sentAt     DateTime @default(now())
-  
-  @@map("messages")
+enum ProjectType {
+  ROOFTOP
+  GROUND
+  UTILITY_SCALE
+  COMMERCIAL
 }
 
-model Review {
-  id       String  @id @default(cuid())
-  rating   Int     @db.SmallInt
-  comment  String?
-  productId String
-  product  Product @relation(fields: [productId], references: [id])
-  authorId String
-  author   User    @relation(fields: [authorId], references: [id])
-  orderId  String?
-  order    Order?  @relation(fields: [orderId], references: [id])
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("reviews")
+enum QuoteRequestStatus {
+  PENDING
+  RESPONDED
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }
 
-model Notification {
-  id      String           @id @default(cuid())
-  userId  String
-  user    User             @relation(fields: [userId], references: [id])
-  type    NotificationType
-  title   String
-  message String
-  isRead  Boolean          @default(false)
-  data    Json?
-  
-  createdAt DateTime @default(now())
-  
-  @@map("notifications")
-} 
+enum QuoteResponseStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  REFUND
+  AUCTION_HOLD
+  AUCTION_RELEASE
+  SELLER_PAYOUT
+  PLATFORM_FEE
+  ESCROW_HOLD
+  ESCROW_RELEASE
+}

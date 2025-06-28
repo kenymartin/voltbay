@@ -421,12 +421,24 @@ export default function Enterprise() {
                     </div>
 
                     {/* Action Button */}
+                    {shouldShowFeature(user, 'canRequestQuote') ? (
                     <Link
                       to={`/enterprise/vendor/${vendor.id}`}
                       className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg text-center font-medium hover:bg-primary-700 transition-colors duration-200 block"
                     >
                       View Details & Request Quote
                     </Link>
+                    ) : (
+                      <div className="w-full bg-gray-300 text-gray-500 py-2 px-4 rounded-lg text-center font-medium cursor-not-allowed">
+                        <div className="flex items-center justify-center space-x-2">
+                          <HardHat className="h-4 w-4" />
+                          <span>Account Approval Required</span>
+                        </div>
+                        <p className="text-xs mt-1 text-gray-400">
+                          Contact admin to request quotes
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

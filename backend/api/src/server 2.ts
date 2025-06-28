@@ -17,13 +17,6 @@ import messageRoutes from './routes/messageRoutes'
 import notificationRoutes from './routes/notificationRoutes'
 import uploadRoutes from './routes/uploadRoutes'
 import paymentRoutes from './routes/payments'
-// import walletRoutes from './routes/walletRoutes'
-import walletRoutes from './routes/walletRoutes'
-import adminRoutes from './routes/adminRoutes'
-import featureFlagsRoutes from './routes/featureFlags'
-import enterpriseRoutes from './routes/enterprise'
-import roiRoutes from './routes/roi'
-import companyProfileRoutes from './routes/companyProfileRoutes'
 import { auctionScheduler } from './services/auctionScheduler'
 
 const app = express()
@@ -34,23 +27,16 @@ app.use(helmet())
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://voltbay.com', 'https://www.voltbay.com']
-    : [
-        'http://localhost:3000', 
-        'https://localhost:3000',
-        'http://localhost:3001', 
-        'https://localhost:3001',
-        'http://localhost:5173',
-        'https://localhost:5173'
-      ],
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
-// Rate limiting - more generous in development
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // 10000 for dev, 100 for production
+  max: 100, // limit each IP to 100 requests per windowMs
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
@@ -83,12 +69,6 @@ app.use('/api/messages', messageRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/payments', paymentRoutes)
-app.use('/api/wallet', walletRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/feature-flags', featureFlagsRoutes)
-app.use('/api/enterprise', enterpriseRoutes)
-app.use('/api/roi', roiRoutes)
-app.use('/api/company-profile', companyProfileRoutes)
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -117,10 +97,6 @@ app.get('/', (req, res) => {
       notifications: '/api/notifications',
       upload: '/api/upload',
       payments: '/api/payments',
-      wallet: '/api/wallet',
-      featureFlags: '/api/feature-flags',
-      enterprise: '/api/enterprise',
-      roi: '/api/roi',
       health: '/health'
     }
   })
@@ -148,19 +124,19 @@ app.listen(PORT, () => {
   logger.info(`[${new Date().toISOString()}] INFO: Payment processing enabled with Stripe`)
   
   // Start auction scheduler
-  // auctionScheduler.start()
-  // logger.info(`[${new Date().toISOString()}] INFO: Auction scheduler started`)
+  auctionScheduler.start()
+  logger.info(`[${new Date().toISOString()}] INFO: Auction scheduler started`)
 })
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully')
-  // auctionScheduler.stop()
+  auctionScheduler.stop()
   process.exit(0)
 })
 
 process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully')
-  // auctionScheduler.stop()
+  auctionScheduler.stop()
   process.exit(0)
 })
