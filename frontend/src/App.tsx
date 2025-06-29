@@ -6,6 +6,7 @@ import GuestLayout from './layouts/GuestLayout'
 import UserLayout from './layouts/UserLayout'
 import AdminLayout from './layouts/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import EnterpriseRouteGuard from './components/EnterpriseRouteGuard'
 import { initGlobalImageFix, fixExistingImages } from './utils/globalImageFix'
 
 // Pages
@@ -125,12 +126,28 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/sell" element={<CreateProductPage />} />
           <Route path="/sell/edit/:id" element={<CreateProductPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute requireAuth={true} requireAdmin={true}>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <EnterpriseRouteGuard requiredPermission="canViewMyOrders">
+              <OrdersPage />
+            </EnterpriseRouteGuard>
+          } />
           <Route path="/order/:id" element={<OrderDetailPage />} />
           <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/products/my" element={<MyProductsPage />} />
-          <Route path="/wallet" element={<WalletPage />} />
+          <Route path="/products/my" element={
+            <EnterpriseRouteGuard requiredPermission="canViewMyListings">
+              <MyProductsPage />
+            </EnterpriseRouteGuard>
+          } />
+          <Route path="/wallet" element={
+            <EnterpriseRouteGuard requiredPermission="canViewWallet">
+              <WalletPage />
+            </EnterpriseRouteGuard>
+          } />
 
           {/* Company Profile Routes */}
           <Route path="/company/profile/me" element={<CompanyProfilePage />} />

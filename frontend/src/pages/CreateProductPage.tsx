@@ -249,7 +249,7 @@ export default function CreateProductPage() {
       
       if (response.success) {
         toast.success('Product created successfully!')
-        navigate('/dashboard?tab=listings')
+        navigate('/products/my')
       }
     } catch (error: any) {
       console.error('Product creation error:', error)
@@ -735,7 +735,7 @@ export default function CreateProductPage() {
           <div className="flex justify-between pt-8 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
               className="btn btn-outline"
             >
               Cancel

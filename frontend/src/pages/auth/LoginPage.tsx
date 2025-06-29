@@ -27,8 +27,8 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Get the intended destination or default to dashboard
-  const from = location.state?.from?.pathname || '/dashboard'
+  // Get the intended destination or default to home
+  const from = location.state?.from?.pathname || '/'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -70,7 +70,7 @@ export default function LoginPage() {
         if (user.role === 'ADMIN') {
           navigate('/admin', { replace: true })
         } else {
-          // Redirect to intended page or dashboard
+          // Redirect to intended page or home
           navigate(from, { replace: true })
         }
       } else {

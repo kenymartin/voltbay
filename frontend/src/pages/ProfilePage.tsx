@@ -147,10 +147,10 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-gray-900">Profile not found</h1>
           <p className="mt-2 text-gray-600">Unable to load your profile information.</p>
           <button 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/')}
             className="mt-4 btn btn-primary"
           >
-            Go to Dashboard
+            Go to Home
           </button>
         </div>
       </div>
@@ -172,9 +172,9 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
                 className="text-white hover:text-gray-200 transition-colors"
-                title="Back to Dashboard"
+                title="Back to Home"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>

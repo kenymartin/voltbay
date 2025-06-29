@@ -8,7 +8,7 @@ import WalletDashboard from '../../components/WalletDashboard'
 import { shouldShowFeature, isEnterpriseUser } from '../../utils/userPermissions'
 import type { Product, Bid, Order, ApiResponse } from '@shared/dist'
 
-type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'wallet' | 'profile'
+type TabType = 'overview' | 'listings' | 'bids' | 'orders' | 'wallet' | 'quotes' | 'profile'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -496,31 +496,50 @@ export default function DashboardPage() {
                 </div>
               </button>
               
-              <button
-                onClick={() => setActiveTab('orders')}
-                className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
-                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+              {shouldShowFeature(user, 'canViewMyOrders') && (
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                      <ShoppingCart className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">Client Projects</h3>
+                    <p className="text-sm text-gray-600">Track contracts</p>
                   </div>
-                  <h3 className="font-medium text-gray-900 mb-1">Client Projects</h3>
-                  <p className="text-sm text-gray-600">Track contracts</p>
-                </div>
-              </button>
+                </button>
+              )}
               
-              <button
-                onClick={() => setActiveTab('wallet')}
-                className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
-              >
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
-                    <Wallet className="w-6 h-6 text-purple-600" />
+              {shouldShowFeature(user, 'canViewWallet') && (
+                <button
+                  onClick={() => setActiveTab('wallet')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
+                      <Wallet className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">Finances</h3>
+                    <p className="text-sm text-gray-600">Revenue & payments</p>
                   </div>
-                  <h3 className="font-medium text-gray-900 mb-1">Finances</h3>
-                  <p className="text-sm text-gray-600">Revenue & payments</p>
-                </div>
-              </button>
+                </button>
+              )}
+              
+              {shouldShowFeature(user, 'canViewQuotes') && (
+                <button
+                  onClick={() => setActiveTab('quotes')}
+                  className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all group"
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                      <TrendingUp className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <h3 className="font-medium text-gray-900 mb-1">Quotes</h3>
+                    <p className="text-sm text-gray-600">Manage quotes</p>
+                  </div>
+                </button>
+              )}
               
               <button
                 onClick={() => navigate('/profile')}
@@ -552,7 +571,7 @@ export default function DashboardPage() {
                 </button>
               )}
               
-              {shouldShowFeature(user, 'canSeeBrowseProducts') && (
+              {shouldShowFeature(user, 'canViewMyListings') && (
                 <button
                   onClick={() => navigate('/search')}
                   className="p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all group"
@@ -567,7 +586,7 @@ export default function DashboardPage() {
                 </button>
               )}
               
-              {shouldShowFeature(user, 'canSeeBids') && (
+              {shouldShowFeature(user, 'canViewMyBids') && (
                 <button
                   onClick={() => setActiveTab('bids')}
                   className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all group"
@@ -582,7 +601,7 @@ export default function DashboardPage() {
                 </button>
               )}
               
-              {shouldShowFeature(user, 'canSeeOrders') && (
+              {shouldShowFeature(user, 'canViewMyOrders') && (
                 <button
                   onClick={() => navigate('/orders')}
                   className="p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-all group"
@@ -832,6 +851,45 @@ export default function DashboardPage() {
     </div>
   )
 
+  const QuotesTab = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">
+          {user?.role === 'VENDOR' ? 'Quote Requests' : 'My Quotes'}
+        </h2>
+        {user?.role === 'BUYER' && (
+          <button
+            onClick={() => navigate('/enterprise')}
+            className="btn btn-primary"
+          >
+            Request New Quote
+          </button>
+        )}
+      </div>
+
+      <div className="text-center py-12">
+        <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          {user?.role === 'VENDOR' ? 'No quote requests yet' : 'No quotes yet'}
+        </h3>
+        <p className="text-gray-600 mb-4">
+          {user?.role === 'VENDOR' 
+            ? 'Quote requests from enterprise buyers will appear here'
+            : 'Your requested quotes will appear here'
+          }
+        </p>
+        {user?.role === 'BUYER' && (
+          <button
+            onClick={() => navigate('/enterprise')}
+            className="btn btn-primary"
+          >
+            Request Your First Quote
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
   const ProfileTab = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Profile Settings</h2>
@@ -925,6 +983,7 @@ export default function DashboardPage() {
     { id: 'bids', label: 'My Bids', icon: Gavel, permission: 'canViewMyBids' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, permission: 'canViewMyOrders' },
     { id: 'wallet', label: 'Wallet', icon: Wallet, permission: 'canViewWallet' },
+    { id: 'quotes', label: 'Quotes', icon: TrendingUp, permission: 'canViewQuotes' },
     { id: 'profile', label: 'Profile', icon: User, permission: null },
   ]
 
@@ -980,11 +1039,12 @@ export default function DashboardPage() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && <OverviewTab />}
-      {activeTab === 'listings' && <ListingsTab />}
-      {activeTab === 'bids' && <BidsTab />}
-      {activeTab === 'orders' && <OrdersTab />}
-      {activeTab === 'wallet' && <WalletTab />}
-      {activeTab === 'profile' && <ProfileTab />}
+      {activeTab === 'listings' && shouldShowFeature(user, 'canViewMyListings') && <ListingsTab />}
+      {activeTab === 'bids' && shouldShowFeature(user, 'canViewMyBids') && <BidsTab />}
+              {activeTab === 'orders' && shouldShowFeature(user, 'canViewMyOrders') && <OrdersTab />}
+        {activeTab === 'wallet' && shouldShowFeature(user, 'canViewWallet') && <WalletTab />}
+        {activeTab === 'quotes' && shouldShowFeature(user, 'canViewQuotes') && <QuotesTab />}
+        {activeTab === 'profile' && <ProfileTab />}
     </div>
   )
 } 

@@ -317,9 +317,9 @@ export default function OrdersPage() {
       <div className="mb-8">
         <div className="flex items-center space-x-4 mb-4">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/')}
             className="text-gray-600 hover:text-gray-800 transition-colors"
-            title="Back to Dashboard"
+            title="Back to Home"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

@@ -15,6 +15,9 @@ router.post('/images', uploadProductImages, uploadController.uploadImages)
 // Upload single image
 router.post('/image', uploadSingle, uploadController.uploadSingleImage)
 
+// Upload quote documents
+router.post('/quote-documents', uploadSingle, uploadController.uploadQuoteDocuments)
+
 // Delete image
 router.delete('/image/:filename', uploadController.deleteImage)
 

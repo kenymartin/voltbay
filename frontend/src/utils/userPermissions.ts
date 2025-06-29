@@ -17,6 +17,7 @@ export interface UserPermissions {
   canViewMessages: boolean
   canViewWallet: boolean
   canViewAnalytics: boolean
+  canViewQuotes: boolean
   
   // Action permissions
   canCreateListing: boolean
@@ -72,12 +73,13 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canAccessCategories: false,
         
         // Dashboard
-        canViewMyListings: isApproved, // Services/Listings - only if approved
+        canViewMyListings: false, // Hidden for enterprise vendors per requirement
         canViewMyBids: false,
-        canViewMyOrders: isApproved, // Contracts/Orders - only if approved
+        canViewMyOrders: false, // Hidden for enterprise vendors per requirement
         canViewMessages: true, // Can always view messages
-        canViewWallet: isApproved, // Wallet access only if approved
+        canViewWallet: false, // Hidden for enterprise vendors per requirement
         canViewAnalytics: isApproved,
+        canViewQuotes: isApproved, // Quote management for enterprise vendors
         
         // Actions
         canCreateListing: isApproved, // Create services - only if approved
@@ -106,10 +108,11 @@ export function getUserPermissions(user: User | null): UserPermissions {
         // Dashboard
         canViewMyListings: false,
         canViewMyBids: false,
-        canViewMyOrders: isApproved, // Contracts/Orders - only if approved
+        canViewMyOrders: false, // Hidden for enterprise buyers per requirement
         canViewMessages: true, // Can always view messages
-        canViewWallet: isApproved, // Wallet access only if approved
+        canViewWallet: false, // Hidden for enterprise buyers per requirement
         canViewAnalytics: isApproved,
+        canViewQuotes: isApproved, // Quote requests for enterprise buyers
         
         // Actions
         canCreateListing: false,
@@ -142,6 +145,7 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canViewMessages: true,
         canViewWallet: true,
         canViewAnalytics: false,
+        canViewQuotes: false,
         
         // Actions
         canCreateListing: true,
@@ -174,6 +178,7 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canViewMessages: true,
         canViewWallet: true,
         canViewAnalytics: false,
+        canViewQuotes: false,
         
         // Actions
         canCreateListing: false,
@@ -206,6 +211,7 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canViewMessages: true,
         canViewWallet: true,
         canViewAnalytics: true,
+        canViewQuotes: true,
         
         // Actions
         canCreateListing: true,
@@ -238,6 +244,7 @@ export function getUserPermissions(user: User | null): UserPermissions {
         canViewMessages: false,
         canViewWallet: false,
         canViewAnalytics: false,
+        canViewQuotes: false,
         
         // Actions
         canCreateListing: false,

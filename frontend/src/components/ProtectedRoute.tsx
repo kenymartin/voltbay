@@ -32,7 +32,7 @@ export default function ProtectedRoute({
     if (user?.role === 'ADMIN') {
       return <Navigate to="/admin" replace />
     }
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/" replace />
   }
 
   // If authentication is required but user is not authenticated
@@ -43,7 +43,7 @@ export default function ProtectedRoute({
 
   // If admin access is required but user is not admin
   if (requireAdmin && (!user || user.role !== 'ADMIN')) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>

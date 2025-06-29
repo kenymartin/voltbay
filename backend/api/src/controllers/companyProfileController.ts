@@ -14,15 +14,14 @@ export const getCompanyProfile = async (req: Request, res: Response) => {
         firstName: true,
         lastName: true,
         companyName: true,
-        representativeName: true,
         phone: true,
         email: true,
-        website: true,
         avatar: true,
         locationCity: true,
         locationState: true,
         specialties: true,
         certifications: true,
+        businessLicense: true,
         createdAt: true,
         vendorProjects: true
       }
@@ -50,15 +49,14 @@ export const getMyCompanyProfile = async (req: Request, res: Response) => {
         firstName: true,
         lastName: true,
         companyName: true,
-        representativeName: true,
         phone: true,
         email: true,
-        website: true,
         avatar: true,
         locationCity: true,
         locationState: true,
         specialties: true,
         certifications: true,
+        businessLicense: true,
         createdAt: true,
         vendorProjects: true
       }
@@ -81,16 +79,15 @@ export const updateCompanyProfile = async (req: Request, res: Response) => {
     const { 
       firstName, 
       lastName, 
-      representativeName, 
       companyName, 
       phone, 
       email, 
-      website, 
       avatar, 
       locationCity, 
       locationState, 
       specialties, 
-      certifications 
+      certifications,
+      businessLicense
     } = req.body
     
     const user = await prisma.user.update({
@@ -98,16 +95,15 @@ export const updateCompanyProfile = async (req: Request, res: Response) => {
       data: {
         firstName,
         lastName,
-        representativeName,
         companyName,
         phone,
         email,
-        website,
         avatar,
         locationCity,
         locationState,
         specialties,
-        certifications
+        certifications,
+        businessLicense
       }
     })
     res.json({ success: true, data: user })

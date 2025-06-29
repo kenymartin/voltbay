@@ -110,4 +110,37 @@ export class UploadController {
       next(error)
     }
   }
+
+  uploadQuoteDocuments = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) {
+        throw new AppError('No document uploaded', 400)
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`
+      const documentUrl = `${baseUrl}/uploads/${req.file.filename}`
+
+      logger.info(`Document uploaded successfully: ${req.file.filename}`)
+
+      res.json({
+        success: true,
+        message: 'Document uploaded successfully',
+        data: {
+          documentUrl,
+          filename: req.file.filename,
+          size: req.file.size
+        }
+      })
+    } catch (error) {
+      // Clean up uploaded file if error occurs
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path)
+        } catch (unlinkError) {
+          logger.error('Error deleting file:', unlinkError)
+        }
+      }
+      next(error)
+    }
+  }
 } 

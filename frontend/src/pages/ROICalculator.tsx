@@ -59,10 +59,10 @@ const ROICalculator: React.FC = () => {
               The ROI Calculator is designed for enterprise buyers to evaluate solar projects. As an enterprise vendor, you can manage your services and respond to quote requests through your dashboard.
             </p>
             <Link 
-              to="/dashboard" 
+              to="/" 
               className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Go to Vendor Dashboard
+              Go to Home
             </Link>
           </div>
         </div>

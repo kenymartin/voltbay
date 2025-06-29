@@ -29,7 +29,6 @@ async function createEnterpriseUsers() {
     isEmailVerified: true,
     companyName: `Enterprise Solar Solutions ${index === 0 ? 'LLC' : `#${index}`}`,
     about: `Leading enterprise solar solutions provider specializing in large-scale commercial and industrial solar installations. ${index === 0 ? 'Primary enterprise vendor account.' : `Branch office ${index}.`}`,
-    representativeName: `${index === 0 ? 'John' : `Rep${index}`} ${index === 0 ? 'Smith' : `Johnson`}`,
     specialties: [
       'Commercial Solar Installations',
       'Industrial Solar Systems',
@@ -71,7 +70,6 @@ async function createEnterpriseUsers() {
     isEmailVerified: true,
     companyName: `Enterprise Corp ${index === 0 ? 'International' : `#${index}`}`,
     about: `Large enterprise organization seeking comprehensive solar energy solutions for our facilities. ${index === 0 ? 'Primary enterprise buyer account.' : `Division ${index}.`}`,
-    representativeName: `${index === 0 ? 'Sarah' : `Buyer${index}`} ${index === 0 ? 'Johnson' : `Williams`}`,
     locationCity: index === 0 ? 'New York' : `City${index + 100}`,
     locationState: index === 0 ? 'NY' : 'NY',
     phone: `+1-555-${String(index + 200).padStart(3, '0')}-${String(Math.floor(Math.random() * 9000) + 1000)}`,

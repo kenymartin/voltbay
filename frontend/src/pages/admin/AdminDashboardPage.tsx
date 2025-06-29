@@ -5,6 +5,14 @@ import { toast } from 'react-toastify'
 import apiService from '../../services/api'
 import type { User, Product, Category, Order, ApiResponse } from '@shared/dist'
 
+// Local UserRole enum to avoid import issues
+enum UserRole {
+  BUYER = 'BUYER',
+  VENDOR = 'VENDOR',
+  ADMIN = 'ADMIN',
+  MODERATOR = 'MODERATOR' // Keep for future use, but not actively used
+}
+
 type TabType = 'overview' | 'users' | 'products' | 'categories' | 'orders'
 
 interface AdminStats {
@@ -47,6 +55,8 @@ export default function AdminDashboardPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('')
   const [selectedUserStatus, setSelectedUserStatus] = useState<string>('')
   const [selectedOrderStatus, setSelectedOrderStatus] = useState<string>('')
+  const [selectedUserType, setSelectedUserType] = useState<string>('')
+  const [selectedUserRole, setSelectedUserRole] = useState<string>('')
 
   useEffect(() => {
     fetchAdminData()
@@ -132,19 +142,24 @@ export default function AdminDashboardPage() {
   )
 
   const UserRow = ({ user }: { user: User }) => {
-    // Determine user type for display
+    // Determine user type for display (5 main roles: Regular Buyer, Regular Vendor, Enterprise Buyer, Enterprise Vendor, Admin)
     const getUserType = () => {
-      if (user.role === 'ADMIN') return 'Admin'
-      if (user.role === 'MODERATOR') return 'Moderator'
-      if (user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor) return 'Enterprise Vendor'
-      if (user.role === 'USER' && !user.isEnterpriseVendor) return 'Customer'
+      if (user.role === UserRole.ADMIN) return 'Admin'
+      if (user.role === UserRole.MODERATOR) return 'Moderator' // Future use
+      if (user.role === UserRole.VENDOR && user.isEnterprise) return 'Enterprise Vendor'
+      if (user.role === UserRole.VENDOR && !user.isEnterprise) return 'Regular Vendor'
+      if (user.role === UserRole.BUYER && user.isEnterprise) return 'Enterprise Buyer'
+      if (user.role === UserRole.BUYER && !user.isEnterprise) return 'Regular Buyer'
       return 'User'
     }
 
     const getUserTypeColor = () => {
-      if (user.role === 'ADMIN') return 'bg-purple-100 text-purple-800'
-      if (user.role === 'MODERATOR') return 'bg-blue-100 text-blue-800'
-      if (user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor) return 'bg-orange-100 text-orange-800'
+      if (user.role === UserRole.ADMIN) return 'bg-purple-100 text-purple-800'
+      if (user.role === UserRole.MODERATOR) return 'bg-blue-100 text-blue-800' // Future use
+      if (user.role === UserRole.VENDOR && user.isEnterprise) return 'bg-orange-100 text-orange-800'
+      if (user.role === UserRole.VENDOR && !user.isEnterprise) return 'bg-green-100 text-green-800'
+      if (user.role === UserRole.BUYER && user.isEnterprise) return 'bg-yellow-100 text-yellow-800'
+      if (user.role === UserRole.BUYER && !user.isEnterprise) return 'bg-blue-100 text-blue-800'
       return 'bg-gray-100 text-gray-800'
     }
 
@@ -449,41 +464,55 @@ export default function AdminDashboardPage() {
                            user.email.toLowerCase().includes(userSearch.toLowerCase())
       
       let matchesStatus = true
+      let matchesType = true
+      let matchesRole = true
       
       if (selectedUserStatus) {
         switch (selectedUserStatus) {
           case 'verified':
-            matchesStatus = user.verified
+            matchesStatus = user.verified ?? false
             break
           case 'unverified':
-            matchesStatus = !user.verified
+            matchesStatus = !(user.verified ?? true)
             break
           case 'ADMIN':
           case 'MODERATOR':
             matchesStatus = user.role === selectedUserStatus
             break
-          case 'CUSTOMER':
-            // Regular users who are not enterprise vendors
-            matchesStatus = user.role === 'USER' && !user.isEnterpriseVendor
+          case 'REGULAR_BUYER':
+            matchesStatus = user.role === UserRole.BUYER && !(user.isEnterprise ?? false)
             break
-          case 'VENDOR':
-            // Regular users who might be vendors (selling products)
-            matchesStatus = user.role === 'USER' && !user.isEnterpriseVendor
+          case 'REGULAR_VENDOR':
+            matchesStatus = user.role === UserRole.VENDOR && !(user.isEnterprise ?? false)
+            break
+          case 'ENTERPRISE_BUYER':
+            matchesStatus = user.role === UserRole.BUYER && (user.isEnterprise ?? false)
             break
           case 'ENTERPRISE_VENDOR':
-            // Enterprise vendors
-            matchesStatus = user.role === 'ENTERPRISE_VENDOR' || user.isEnterpriseVendor
+            matchesStatus = user.role === UserRole.VENDOR && (user.isEnterprise ?? false)
             break
-          case 'USER':
-            // All regular users (both customers and vendors)
-            matchesStatus = user.role === 'USER'
+          case 'ALL_BUYERS':
+            matchesStatus = user.role === UserRole.BUYER
+            break
+          case 'ALL_VENDORS':
+            matchesStatus = user.role === UserRole.VENDOR
             break
           default:
             matchesStatus = true
         }
       }
-      
-      return matchesSearch && matchesStatus
+
+      // New filtering logic for user type
+      if (selectedUserType) {
+        matchesType = selectedUserType === 'Enterprise' ? (user.isEnterprise ?? false) : !(user.isEnterprise ?? false)
+      }
+
+      // New filtering logic for user role
+      if (selectedUserRole) {
+        matchesRole = selectedUserRole === 'Buyer' ? user.role === UserRole.BUYER : user.role === UserRole.VENDOR
+      }
+
+      return matchesSearch && matchesStatus && matchesType && matchesRole
     })
 
     return (
@@ -492,16 +521,36 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-semibold">User Management</h2>
           <div className="flex space-x-4">
             <select
+              value={selectedUserType}
+              onChange={(e) => setSelectedUserType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Types</option>
+              <option value="Regular">Regular</option>
+              <option value="Enterprise">Enterprise</option>
+            </select>
+            <select
+              value={selectedUserRole}
+              onChange={(e) => setSelectedUserRole(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Roles</option>
+              <option value="Buyer">Buyer</option>
+              <option value="Vendor">Vendor</option>
+            </select>
+            <select
               value={selectedUserStatus}
               onChange={(e) => setSelectedUserStatus(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Users</option>
-              <option value="CUSTOMER">Customers</option>
-              <option value="VENDOR">Vendors</option>
+              <option value="REGULAR_BUYER">Regular Buyers</option>
+              <option value="ENTERPRISE_BUYER">Enterprise Buyers</option>
+              <option value="REGULAR_VENDOR">Regular Vendors</option>
               <option value="ENTERPRISE_VENDOR">Enterprise Vendors</option>
+              <option value="ALL_BUYERS">All Buyers</option>
+              <option value="ALL_VENDORS">All Vendors</option>
               <option value="ADMIN">Admins</option>
-              <option value="MODERATOR">Moderators</option>
               <option value="verified">Verified Only</option>
               <option value="unverified">Unverified Only</option>
             </select>

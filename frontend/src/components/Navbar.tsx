@@ -238,21 +238,25 @@ export default function Navbar() {
                   {/* Profile dropdown menu */}
                   {isProfileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50" ref={profileMenuRef}>
-                      <Link
-                        to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to="/wallet"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <Wallet className="h-4 w-4" />
-                        <span>Wallet</span>
-                      </Link>
+                      {user?.role === 'ADMIN' && (
+                        <Link
+                          to="/dashboard"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                      )}
+                      {shouldShowFeature(user, 'canViewWallet') && (
+                        <Link
+                          to="/wallet"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <Wallet className="h-4 w-4" />
+                          <span>Wallet</span>
+                        </Link>
+                      )}
                       {/* Profiles section for enterprise users */}
                       {isEnterpriseUser(user) ? (
                         <>
@@ -300,20 +304,24 @@ export default function Navbar() {
                           Admin Dashboard
                         </Link>
                       )}
-                      <Link
-                        to="/orders"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        My Orders
-                      </Link>
-                      <Link
-                        to="/products/my"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        My Products
-                      </Link>
+                      {shouldShowFeature(user, 'canViewMyOrders') && (
+                        <Link
+                          to="/orders"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          My Orders
+                        </Link>
+                      )}
+                      {shouldShowFeature(user, 'canViewMyListings') && (
+                        <Link
+                          to="/products/my"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          My Products
+                        </Link>
+                      )}
                       <hr className="my-1" />
                       <button
                         onClick={handleLogout}
@@ -487,21 +495,25 @@ export default function Navbar() {
             {isAuthenticated && (
               <>
                 <hr className="my-2" />
-                <Link
-                  to="/dashboard"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/wallet"
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Wallet className="h-5 w-5 mr-3" />
-                  Wallet
-                </Link>
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/dashboard"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
+                {shouldShowFeature(user, 'canViewWallet') && (
+                  <Link
+                    to="/wallet"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Wallet className="h-5 w-5 mr-3" />
+                    Wallet
+                  </Link>
+                )}
                 {/* Profiles section for enterprise users */}
                 {isEnterpriseUser(user) ? (
                   <>

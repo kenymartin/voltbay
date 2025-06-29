@@ -52,10 +52,10 @@ export default function Enterprise() {
             As an enterprise vendor, you can manage your services and respond to quote requests through your vendor dashboard.
           </p>
           <Link 
-            to="/dashboard" 
+            to="/" 
             className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
           >
-            Go to Vendor Dashboard
+            Go to Home
           </Link>
         </div>
       </div>

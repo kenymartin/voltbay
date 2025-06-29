@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import apiService from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { toast } from 'react-toastify'
 
 interface VendorProfile {
   id: string
@@ -84,7 +85,7 @@ export default function VendorProfileManagementPage() {
 
   useEffect(() => {
     if (user?.role !== 'VENDOR' || !user?.isEnterprise) {
-      navigate('/dashboard')
+      navigate('/')
       return
     }
     
@@ -139,7 +140,8 @@ export default function VendorProfileManagementPage() {
       }) as any
       
       if (response.success) {
-        alert('Profile updated successfully!')
+        // alert('Profile updated successfully!')
+        toast.success('Profile updated successfully!')
       }
     } catch (error) {
       console.error('Error saving profile:', error)

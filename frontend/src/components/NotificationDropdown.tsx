@@ -159,8 +159,8 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
         }
         break
       default:
-        // For other types, go to dashboard
-        navigate('/dashboard')
+        // For other types, go to home page (dashboard only for admins)
+        navigate('/')
     }
 
     setIsOpen(false)
@@ -308,17 +308,19 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <button
-              onClick={() => {
-                navigate('/dashboard')
-                setIsOpen(false)
-              }}
-              className="w-full text-sm text-center text-blue-600 hover:text-blue-800 font-medium"
-            >
-              View all in dashboard
-            </button>
-          </div>
+          {user?.role === 'ADMIN' && (
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => {
+                  navigate('/dashboard')
+                  setIsOpen(false)
+                }}
+                className="w-full text-sm text-center text-blue-600 hover:text-blue-800 font-medium"
+              >
+                View all in dashboard
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
